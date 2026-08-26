@@ -1,0 +1,11 @@
+# Reglas de Desarrollo - backend_sim_propyme
+
+- Arquitectura: Clean Architecture en FastAPI.
+- Tipos de datos: Utiliza Pydantic v2 y tipado estricto (type hints).
+- Precisión numérica: Para valores monetarios o cálculos tributarios, usa `Decimal` o `int`, evitando `float` para prevenir errores de redondeo.
+- Estructura:
+  - `app/schemas/`: Modelos Pydantic de entrada/salida.
+  - `app/services/`: Lógica pura de cálculo (sin dependencias de base de datos o red).
+  - `app/db/`: Carga de mocks JSON locales.
+  - `tests/`: Pruebas unitarias con pytest para cada cálculo.
+- Metodología: TDD (Test-Driven Development). Escribe primero el test con los datos esperados y luego la lógica del servicio.

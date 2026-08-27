@@ -8,10 +8,12 @@ from decimal import Decimal
 
 from app.schemas.ingresos import (
     AvisosIngresos,
+    CamposDigitados,
+    ExternosIngresos,
     FilaIngreso,
-    IngresosRequest,
     IngresosResponse,
     TotalizadoresIngresos,
+    VectoresIngresos,
 )
 
 CERO = Decimal("0")
@@ -54,28 +56,34 @@ class IngresosService:
         "7.27": ("Credito sobre Activos Fijos", 1405),
     }
 
-    def calcular(self, request: IngresosRequest) -> IngresosResponse:
+    def calcular(
+        self,
+        vectores: VectoresIngresos,
+        externos: ExternosIngresos,
+        digitados: CamposDigitados,
+    ) -> IngresosResponse:
         """Calcula todos los campos de salida del modulo Ingresos."""
-        v = request.vectores
-        d = request.digitados
-        calc4064 = request.externos.Calc4064
-        calc4075 = request.externos.Calc4075
+        v = vectores
+        d = digitados
+        calc4064 = externos.Calc4064
+        calc4075 = externos.Calc4075
 
         # --- Col. H (montos adeudados AT anterior) por fila ---
+        # Prioriza el override manual (digitados) sobre el vector original.
         h = {
-            "7.1": v.Vx014255,
-            "7.2": v.Vx014256,
-            "7.3": v.Vx014257,
-            "7.4": v.Vx014258,
-            "7.5": v.Vx014259,
-            "7.6": v.Vx014260,
-            "7.7": v.Vx014261,
-            "7.9": v.Vx014263,
-            "7.14": v.Vx014264,
-            "7.15": v.Vx014265,
-            "7.17": v.Vx014266,
-            "7.18": v.Vx014267,
-            "7.20": v.Vx014262,
+            "7.1": d.ingresos_adeudados_at_anterior.get("7.1", v.Vx014255),
+            "7.2": d.ingresos_adeudados_at_anterior.get("7.2", v.Vx014256),
+            "7.3": d.ingresos_adeudados_at_anterior.get("7.3", v.Vx014257),
+            "7.4": d.ingresos_adeudados_at_anterior.get("7.4", v.Vx014258),
+            "7.5": d.ingresos_adeudados_at_anterior.get("7.5", v.Vx014259),
+            "7.6": d.ingresos_adeudados_at_anterior.get("7.6", v.Vx014260),
+            "7.7": d.ingresos_adeudados_at_anterior.get("7.7", v.Vx014261),
+            "7.9": d.ingresos_adeudados_at_anterior.get("7.9", v.Vx014263),
+            "7.14": d.ingresos_adeudados_at_anterior.get("7.14", v.Vx014264),
+            "7.15": d.ingresos_adeudados_at_anterior.get("7.15", v.Vx014265),
+            "7.17": d.ingresos_adeudados_at_anterior.get("7.17", v.Vx014266),
+            "7.18": d.ingresos_adeudados_at_anterior.get("7.18", v.Vx014267),
+            "7.20": d.ingresos_adeudados_at_anterior.get("7.20", v.Vx014262),
         }
 
         # --- Col. B: Ingresos del anio (Neto) por fila ---
@@ -98,18 +106,23 @@ class IngresosService:
             ),
             "7.11": d.ingresos_ano.get("7.11", CERO),
             "7.13": d.ingresos_ano.get("7.13", CERO),
-            "7.14": v.Vx010118 + v.Vx012830 + v.Vx010240 + v.Vx013639,
+            "7.14": d.ingresos_ano.get(
+                "7.14",
+                v.Vx010118 + v.Vx012830 + v.Vx010240 + v.Vx013639,
+            ),
             "7.15": IngresosService._b_715(calc4064, calc4075, v),
             "7.16": d.ingresos_ano.get("7.16", CERO),
             "7.17": IngresosService._b_717(v),
             "7.18": IngresosService._b_718(v),
-            "7.19": (
+            "7.19": d.ingresos_ano.get(
+                "7.19",
                 v.Vx013633 + v.Vx013634 + v.Vx013635 + v.Vx013636
-                + v.Vx013637 + v.Vx013638
+                + v.Vx013637 + v.Vx013638,
             ),
-            "7.20": (
+            "7.20": d.ingresos_ano.get(
+                "7.20",
                 v.Vx013640 + v.Vx013641 + v.Vx013642 + v.Vx013643
-                + v.Vx013644 + v.Vx013645
+                + v.Vx013644 + v.Vx013645,
             ),
             "7.25": CERO,
             "7.26": CERO,
@@ -120,19 +133,24 @@ class IngresosService:
         f = self._calcular_f(b, h, d)
 
         # --- Totalizadores ---
+        # Segun el SII, el total debe representar la Columna F (Monto Ingreso Percibido)
+        # Se usa .get() porque filas como 7.25 y 7.26 no tienen calculo de F definido
         fila_7_12 = POS(
-            b["7.1"] + b["7.2"] + b["7.3"] + b["7.4"] + b["7.5"]
-            + b["7.6"] + b["7.7"] - b["7.8"] + b["7.9"] + b["7.11"]
+            f.get("7.1", CERO) + f.get("7.2", CERO) + f.get("7.3", CERO)
+            + f.get("7.4", CERO) + f.get("7.5", CERO) + f.get("7.6", CERO)
+            + f.get("7.7", CERO) - f.get("7.8", CERO) + f.get("7.9", CERO)
+            + f.get("7.11", CERO)
         )
         total_ingresos = (
             fila_7_12
-            + b["7.13"] + b["7.14"] + b["7.15"] + b["7.16"] + b["7.17"]
-            + b["7.18"] + b["7.19"] + b["7.20"] + b["7.25"] + b["7.26"]
-            + b["7.27"] + b["7.10"]
+            + f.get("7.13", CERO) + f.get("7.14", CERO) + f.get("7.15", CERO)
+            + f.get("7.16", CERO) + f.get("7.17", CERO) + f.get("7.18", CERO)
+            + f.get("7.19", CERO) + f.get("7.20", CERO) + f.get("7.25", CERO)
+            + f.get("7.26", CERO) + f.get("7.27", CERO) + f.get("7.10", CERO)
         )
 
         filas = self._armar_filas(b, f, h)
-        avisos = self._calcular_avisos(calc4064, request.externos.CRRP, v)
+        avisos = self._calcular_avisos(calc4064, externos.CRRP, v)
 
         return IngresosResponse(
             filas=filas,

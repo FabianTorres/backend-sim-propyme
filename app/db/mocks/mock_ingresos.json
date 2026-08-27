@@ -1,6 +1,5 @@
 {
   "at": "2025",
-  "modulo": "ingresos_14d1",
   "patrimonio_personal": false,
   "vectores": {
     "Vx010042": 1,
@@ -125,7 +124,8 @@
     "CRRP": false
   },
   "digitados": {
-    "monto_no_percibido": {
+    "ingresos": {
+      "monto_no_percibido": {
       "7.1": 0,
       "7.2": 100000,
       "7.3": 0,
@@ -166,6 +166,7 @@
       "7.13": 120000,
       "7.16": 200000,
       "7.27": 20000
+    }
     }
   }
 }

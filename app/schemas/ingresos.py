@@ -283,12 +283,15 @@ class CamposDigitados(BaseModel):
     factura_renta_presunta: dict[str, Decimal] = Field(default_factory=dict)
     # Col. B digitada en filas sin formula (7.11, 7.13, 7.16, 7.27)
     ingresos_ano: dict[str, Decimal] = Field(default_factory=dict)
+    # Col. H (Override): el usuario puede ajustar los montos adeudados AT anterior
+    ingresos_adeudados_at_anterior: dict[str, Decimal] = Field(default_factory=dict)
 
     @field_validator(
         "monto_no_percibido",
         "no_considerar_patrimonio",
         "factura_renta_presunta",
         "ingresos_ano",
+        "ingresos_adeudados_at_anterior",
         mode="before",
     )
     @classmethod
@@ -305,20 +308,8 @@ class CamposDigitados(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Request / Response
+# Response (modelos de salida)
 # ---------------------------------------------------------------------------
-class IngresosRequest(BaseModel):
-    """Contrato de entrada del modulo Ingresos (Pagina 1 del 14D1)."""
-
-    at: str = Field(default="2025", description="Anio tributario")
-    modulo: str = Field(default="ingresos_14d1")
-    vectores: VectoresIngresos = Field(default_factory=VectoresIngresos)
-    externos: ExternosIngresos = Field(default_factory=ExternosIngresos)
-    digitados: CamposDigitados = Field(default_factory=CamposDigitados)
-    # True = patrimonio personal / False = contabilidad de la empresa
-    patrimonio_personal: bool | None = Field(default=None)
-
-
 class FilaIngreso(BaseModel):
     """Resultado de una fila de la tabla de Ingresos."""
 

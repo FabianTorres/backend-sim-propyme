@@ -9,3 +9,6 @@
   - `app/db/`: Carga de mocks JSON locales.
   - `tests/`: Pruebas unitarias con pytest para cada cálculo.
 - Metodología: TDD (Test-Driven Development). Escribe primero el test con los datos esperados y luego la lógica del servicio.
+- Lee el documento `docs/ESTADO_PROYECTO.md` para saber el estado actual del proyecto, donde estamos y que nos falta por delante. Ingresa y haz los cambios necesarios en ese archivo de acuerdo a lo que se te vaya pidiendo. No seas muy extenso al editar ese archivo, que sea claro y consiso.
+- Para saber como es el negocio de la pagina 1 (Ingresos): `docs/Pagina_1_14D1.md` por si tienes dudas. Si encuentras algo contradictorio al implementar lo que se pide, avisalo.
+- **Comentarios:** Deben dejarse comentarios relevantes y utiles en español (quitando caracteres especiales como "ñ" o tildes, por ejemplo la "año" debe ser "ano"). No hagas comentarios en primera persona como "Hicimos este cambio para..." sino en forma impersonal, como "Se hizo este cambio para...".

@@ -11,6 +11,10 @@ Egresos) sin que el Frontend tenga que orquestar nada.
 
 from pydantic import BaseModel, Field
 
+# TODO: Al agregar nueva pagina, importar sus schemas aqui, ej:
+# from app.schemas.egresos import CamposDigitadosEgresos, EgresosResponse
+# from app.schemas.egresos import VectoresEgresos, ExternosEgresos
+
 from app.schemas.ingresos import (
     CamposDigitados,
     ExternosIngresos,
@@ -29,6 +33,8 @@ class DigitadosGlobal(BaseModel):
     Si una pagina aun no se ha implementado, su nodo es None.
     """
 
+    # TODO: Al agregar nueva pagina, descomentar/agregar su nodo aqui, ej:
+    # egresos: CamposDigitadosEgresos | None = Field(default=None)
     ingresos: CamposDigitados | None = Field(default=None)
 
 
@@ -44,6 +50,10 @@ class SimuladorGlobalRequest(BaseModel):
     """
 
     at: str = Field(default="2025", description="Anio tributario")
+    mostrar_formulas: bool = Field(default=False, description="Activa el Modo Auditoria con desglose de formulas")
+    # TODO: Al agregar nueva pagina, los vectores/externos se vuelven uniones, ej:
+    # vectores: VectoresIngresos | VectoresEgresos
+    # O se crea un VectoresGlobales que contenga ambos sub-nodos.
     vectores: VectoresIngresos = Field(default_factory=VectoresIngresos)
     externos: ExternosIngresos = Field(default_factory=ExternosIngresos)
     patrimonio_personal: bool | None = Field(default=None)
@@ -60,4 +70,6 @@ class SimuladorGlobalResponse(BaseModel):
     Las paginas aun no implementadas aparecen como None.
     """
 
+    # TODO: Al agregar nueva pagina, descomentar/agregar su nodo aqui, ej:
+    # egresos: EgresosResponse | None = Field(default=None)
     ingresos: IngresosResponse | None = Field(default=None)

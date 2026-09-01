@@ -1,8 +1,7 @@
 """Router principal de la API v1.
 
 Centraliza el registro de los routers de cada pagina del Asistente Propyme.
-Ahora expone un unico endpoint /simulador/calcular a traves del Orquestador
-Global, que internamente coordina todos los modulos de calculo.
+Expone un unico endpoint /simulador/calcular a traves del Orquestador Global.
 """
 from fastapi import APIRouter
 

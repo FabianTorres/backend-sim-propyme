@@ -45,37 +45,31 @@ Durante las fases iniciales del desarrollo, **no se utilizará una base de datos
 ```text
 backend_sim_propyme/
 ├── app/
-│   ├── api/            # Controladores/Endpoints (Rutas de FastAPI)
-│   ├── core/           # Configuraciones generales (.env, variables de entorno)
-│   ├── db/             # Manejo de Mocks locales (y a futuro Azure SQL)
-│   ├── models/         # Modelos de datos (Entidades)
-│   ├── schemas/        # Validadores de Pydantic (Input/Output del API)
-│   ├── services/       # NÚCLEO: Algoritmos de las 8 Páginas del SII
-│   └── utils/          # Herramientas de soporte (Lectura de Excel, formateo)
-├── tests/              # Pruebas automatizadas de los algoritmos
-├── venv/               # Entorno virtual aislado
-├── .env                # Variables de entorno locales
-├── .gitignore          # Exclusión de archivos para Git
-├── requirements.txt    # Dependencias de Python
-└── main.py             # Punto de entrada de Uvicorn/FastAPI
-```
- 
+│   ├── api/            # Router y Endpoints (simulador.py, health.py)
+│   ├── core/           # Configuraciones generales (config.py)
+│   ├── db/             # Mocks JSON de la simulación global
+│   ├── schemas/        # Contratos Pydantic globales y por módulo
+│   ├── services/       # NÚCLEO: Orquestador y lógicas de cálculo por página
+│   └── utils/          # Utilidades matemáticas compartidas (POS, max_d)
+├── docs/               # Reglas de negocio del SII y Estado del Proyecto
+├── tests/              # Suite de pruebas Pytest (conftest.py centralizado)
+├── pyproject.toml      # Configuración de dependencias, pytest y ruff
+└── main.py             # Punto de entrada de FastAPI
+ ```
 ---
  
 ## 6. Historial de Trabajo y Estado Actual
  
-*   [Completado] Definición de la estrategia general (Separación Frontend React / Backend Python).
-*   [Completado] Configuración inicial del repositorio backend.
-*   [Completado] Creación del entorno virtual (venv) y manejo de errores de compilación (pip upgrade).
-*   [Completado] Instalación de librerías base (FastAPI, Pandas).
-*   [Completado] Implementación de main.py y validación del servidor en el puerto 8001 (/health).
+*   [Completado] Definición de la estrategia y configuración inicial.
+*   [Completado] Módulo Página 1 (Ingresos) implementado con validación Pydantic.
+*   [Completado] Refactor Arquitectónico: Migración a Patrón de Orquestador Global y Estado Stateless.
+*   [Completado] Limpieza de deuda técnica (Extracción de utilidades matemáticas, consolidación de Mocks y Fixtures para Pytest).
 ---
  
 ## 7. Hoja de Ruta (Siguientes Pasos)
- 
-*   Construcción de Estructuras Base: Diseñar los esquemas JSON (schemas) que representen los Vectores (Vx01xxxx), Parámetros (Pxxx) y el concepto de Año Tributario (AT).
-*   Sistema de Mocks: Crear los archivos JSON locales para poblar los Parámetros y Vectores de prueba.
-*   Desarrollo Página 1: Recibir la documentación de negocio para la Página 1 e implementar el primer módulo de cálculo en services/.
-*   Desarrollo Páginas 2 a 8: Continuar el pipeline respetando dependencias (especial énfasis técnico en la Página 7 - RRE).
-*   Integración Frontend: Ajustar el JSON de salida según las necesidades del equipo de UI.
-*   Módulo Excel: Implementar el parser para generar el Excel de salida que consumirá Playwright.
+
+*   Corregir errorres y hacer QA a Página 1 (Ingresos) 
+*   Desarrollo Página 2 (Egresos): Implementar lógica, override pattern e integración al Orquestador.
+*   Desarrollo Páginas 3, 4 y 5: Continuar el pipeline (Retiros, RLI, Recuadro 17) pasando totales consolidados a través de variables internas en el servicio Orquestador.
+*   Integración Frontend: Ajustar la UI para consumir el endpoint global /calcular.
+*   Módulo Excel: Implementar el parser para automatización de QA con Playwright.

@@ -1,14 +1,14 @@
 # Reglas de Desarrollo - backend_sim_propyme
 
-- Arquitectura: Clean Architecture en FastAPI.
+- Arquitectura: Clean Architecture en FastAPI con Patrón de Orquestador Global.
 - Tipos de datos: Utiliza Pydantic v2 y tipado estricto (type hints).
-- Precisión numérica: Para valores monetarios o cálculos tributarios, usa `Decimal` o `int`, evitando `float` para prevenir errores de redondeo.
-- Estructura:
-  - `app/schemas/`: Modelos Pydantic de entrada/salida.
-  - `app/services/`: Lógica pura de cálculo (sin dependencias de base de datos o red).
-  - `app/db/`: Carga de mocks JSON locales.
-  - `tests/`: Pruebas unitarias con pytest para cada cálculo.
-- Metodología: TDD (Test-Driven Development). Escribe primero el test con los datos esperados y luego la lógica del servicio.
-- Lee el documento `docs/ESTADO_PROYECTO.md` para saber el estado actual del proyecto, donde estamos y que nos falta por delante. Ingresa y haz los cambios necesarios en ese archivo de acuerdo a lo que se te vaya pidiendo. No seas muy extenso al editar ese archivo, que sea claro y consiso.
-- Para saber como es el negocio de la pagina 1 (Ingresos): `docs/Pagina_1_14D1.md` por si tienes dudas. Si encuentras algo contradictorio al implementar lo que se pide, avisalo.
-- **Comentarios:** Deben dejarse comentarios relevantes y utiles en español (quitando caracteres especiales como "ñ" o tildes, por ejemplo la "año" debe ser "ano"). No hagas comentarios en primera persona como "Hicimos este cambio para..." sino en forma impersonal, como "Se hizo este cambio para...".
+- Precisión numérica: Para valores monetarios o cálculos tributarios, usa `Decimal` o `int`, evitando `float` para prevenir errores de redondeo. Importa `CERO` y `POS` desde `app.utils.matematicas`.
+- Estructura y Flujo:
+  - `app/schemas/`: Modelos Pydantic. Reutiliza validadores de `_helpers.py`. TODO esquema nuevo debe integrarse al `SimuladorGlobalRequest` en `orquestador.py`.
+  - `app/services/`: Lógica pura de cálculo. No crees endpoints nuevos por página; todo servicio es llamado desde `OrquestadorService`.
+  - `tests/`: Pruebas unitarias con pytest. Usa los fixtures de `conftest.py`.
+- Regla Crítica (Stateless y Override): El backend es un oráculo sin memoria. El frontend envía SIEMPRE la historia completa en el bloque `vectores` y las ediciones manuales en el bloque `digitados.<modulo>`. En la lógica, prioriza SIEMPRE el valor digitado sobre el vector/fórmula usando `d.campo.get("codigo", formula)`.
+- Metodología: TDD (Test-Driven Development). Escribe primero el test y luego la lógica.
+- Contexto: Lee el documento `docs/ESTADO_PROYECTO.md` al iniciar la sesión para saber dónde estamos. Actualízalo de forma concisa al terminar una tarea importante.
+- Reglas de Negocio: Revisa los `docs/Pagina_X...md` al implementar un módulo. Si hay contradicciones, avísalo.
+- Comentarios: Útiles, en español sin caracteres especiales (ej. "año" -> "ano"), en forma impersonal ("Se implementó..." no "Implementé...").

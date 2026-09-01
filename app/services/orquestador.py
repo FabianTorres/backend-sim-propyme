@@ -30,20 +30,32 @@ class OrquestadorService:
         digitados_ingresos = (
             request.digitados.ingresos or CamposDigitados()
         )
+        mostrar_formulas = getattr(request, "mostrar_formulas", False)
         resultado_ingresos = IngresosService().calcular(
             vectores=request.vectores,
             externos=request.externos,
             digitados=digitados_ingresos,
+            mostrar_formulas=mostrar_formulas,
         )
 
-        # --- Modulos futuros van aqui ---
+        # --- Modulo 2: Egresos (TODO - descomentar al implementar) ---
+        # from app.services.egresos import EgresosService
+        # digitados_egresos = (
+        #     request.digitados.egresos or CamposDigitadosEgresos()
+        # )
         # resultado_egresos = EgresosService().calcular(...)
-        # resultado_retiros = RetirosService().calcular(...)
-        # resultado_rli     = RLIService().calcular(...)
 
+        # --- Modulo 3: Retiros (TODO) ---
+
+        # --- Modulo 4: Determinacion RLI (TODO - depende de Ingresos y Egresos) ---
+
+        # --- Modulo 5: Recuadro 17 F22 (TODO) ---
+
+        # TODO: Descomentar sub-nodos al implementar cada pagina, ej:
+        # egresos=resultado_egresos,
+        # retiros=resultado_retiros,
+        # rli=resultado_rli,
+        # recuadro_17=resultado_recuadro_17,
         return SimuladorGlobalResponse(
             ingresos=resultado_ingresos,
-            # egresos=resultado_egresos,
-            # retiros=resultado_retiros,
-            # rli=resultado_rli,
         )

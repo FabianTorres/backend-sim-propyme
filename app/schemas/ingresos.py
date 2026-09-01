@@ -14,6 +14,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas._helpers import coerce_to_decimal, normalizar_dict_decimal
+
 
 # ---------------------------------------------------------------------------
 # Vectores (Vx...) - Input
@@ -296,15 +298,33 @@ class CamposDigitados(BaseModel):
     )
     @classmethod
     def _normalizar_diccionario(cls, value):
-        if not isinstance(value, dict):
-            return {}
-        out = {}
-        for clave, monto in value.items():
-            if monto is None or (isinstance(monto, str) and monto.strip() == ""):
-                out[clave] = Decimal("0")
-            else:
-                out[clave] = Decimal(str(monto))
-        return out
+        return normalizar_dict_decimal(value)
+
+
+# ---------------------------------------------------------------------------
+# Inspector de Formulas (Modo Auditoria)
+# ---------------------------------------------------------------------------
+
+
+class VariableInfo(BaseModel):
+    """Una variable usada en una formula, con metadata de auditoria."""
+
+    nombre: str
+    valor: Decimal
+    origen: str  # 'vector' | 'externo' | 'digitado' | 'calculado'
+
+
+class InspectorFormula(BaseModel):
+    """Desglose completo de una formula para el Modo Auditoria.
+
+    Se genera en una sola pasada bottom-up desde el arbol de expresiones.
+    """
+
+    valor: Decimal
+    literal: str = Field(description="Formula con nombres de variables")
+    evaluado: str = Field(description="Formula con valores numericos reales")
+    variables_usadas: list[VariableInfo] = Field(default_factory=list)
+    pasos: list[str] = Field(default_factory=list, description="Paso a paso de la resolucion matematica")
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +342,9 @@ class FilaIngreso(BaseModel):
     ingresos_adeudados_at_anterior: Decimal | None = None
     # Col. F calculada (Monto Ingreso Percibido)
     monto_ingreso_percibido: Decimal | None = None
+    # Modo Auditoria: inspectores por columna (solo cuando mostrar_formulas=True)
+    #   llaves: "ingresos_ano", "ingresos_adeudados_at_anterior", "monto_ingreso_percibido"
+    inspectores: dict[str, InspectorFormula] | None = Field(default=None)
 
 
 class TotalizadoresIngresos(BaseModel):

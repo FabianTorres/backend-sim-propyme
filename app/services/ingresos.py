@@ -1,30 +1,32 @@
 """Servicio de calculo del modulo 'Ingresos' - Pagina 1 del 14D1.
 
-Logica pura de calculo (Clean Architecture): no depende de base de datos ni de
-red. Recibe un IngresosRequest y devuelve un IngresosResponse con los campos
-calculados (Columnas B y F, totalizadores y avisos).
+Logica pura de calculo con arboles de expresiones para Modo Auditoria.
 """
+
 from decimal import Decimal
 
+from app.core.motor_formulas import (
+    Constante,
+    MaxD,
+    Nodo,
+    Pos,
+    ReemplazoManual,
+    ResultadoNodo,
+    Si,
+    Var,
+)
 from app.schemas.ingresos import (
     AvisosIngresos,
     CamposDigitados,
     ExternosIngresos,
     FilaIngreso,
     IngresosResponse,
+    InspectorFormula,
     TotalizadoresIngresos,
+    VariableInfo,
     VectoresIngresos,
 )
-
-CERO = Decimal("0")
-
-
-def POS(valor: Decimal) -> Decimal:
-    """Parte Positiva: devuelve max(valor, 0).
-
-    Equivale a MAX(0, valor). Se aplica sobre valores monetarios (Decimal).
-    """
-    return valor if valor > CERO else CERO
+from app.utils.matematicas import CERO
 
 
 class IngresosService:
@@ -56,11 +58,16 @@ class IngresosService:
         "7.27": ("Credito sobre Activos Fijos", 1405),
     }
 
+    # ------------------------------------------------------------------
+    # Metodo principal
+    # ------------------------------------------------------------------
+
     def calcular(
         self,
         vectores: VectoresIngresos,
         externos: ExternosIngresos,
         digitados: CamposDigitados,
+        mostrar_formulas: bool = False,
     ) -> IngresosResponse:
         """Calcula todos los campos de salida del modulo Ingresos."""
         v = vectores
@@ -68,203 +75,382 @@ class IngresosService:
         calc4064 = externos.Calc4064
         calc4075 = externos.Calc4075
 
-        # --- Col. H (montos adeudados AT anterior) por fila ---
-        # Prioriza el override manual (digitados) sobre el vector original.
-        h = {
-            "7.1": d.ingresos_adeudados_at_anterior.get("7.1", v.Vx014255),
-            "7.2": d.ingresos_adeudados_at_anterior.get("7.2", v.Vx014256),
-            "7.3": d.ingresos_adeudados_at_anterior.get("7.3", v.Vx014257),
-            "7.4": d.ingresos_adeudados_at_anterior.get("7.4", v.Vx014258),
-            "7.5": d.ingresos_adeudados_at_anterior.get("7.5", v.Vx014259),
-            "7.6": d.ingresos_adeudados_at_anterior.get("7.6", v.Vx014260),
-            "7.7": d.ingresos_adeudados_at_anterior.get("7.7", v.Vx014261),
-            "7.9": d.ingresos_adeudados_at_anterior.get("7.9", v.Vx014263),
-            "7.14": d.ingresos_adeudados_at_anterior.get("7.14", v.Vx014264),
-            "7.15": d.ingresos_adeudados_at_anterior.get("7.15", v.Vx014265),
-            "7.17": d.ingresos_adeudados_at_anterior.get("7.17", v.Vx014266),
-            "7.18": d.ingresos_adeudados_at_anterior.get("7.18", v.Vx014267),
-            "7.20": d.ingresos_adeudados_at_anterior.get("7.20", v.Vx014262),
-        }
+        # --- Construir contexto plano ---
+        contexto: dict = {}
+        for field_name, value in v.model_dump().items():
+            contexto[field_name] = value
+        contexto["Calc4064"] = calc4064
+        contexto["Calc4075"] = calc4075
 
-        # --- Col. B: Ingresos del anio (Neto) por fila ---
-        b = {
-            "7.1": IngresosService._b_71(v),
-            "7.2": IngresosService._b_72(v),
-            "7.3": IngresosService._b_73(v),
-            "7.4": v.Vx012191,
-            "7.5": IngresosService._max_d(v.Vx012192, v.Vx013379 + v.Vx013380),
-            "7.6": IngresosService._max_d(v.Vx012193, v.Vx013378),
-            "7.7": IngresosService._max_d(
-                v.Vx012195,
-                v.Vx013373 + v.Vx013374 + v.Vx013375 + v.Vx013376,
-            ),
-            "7.8": v.Vx012197,
-            "7.9": IngresosService._max_d(v.Vx013257, v.Vx013377),
-            "7.10": (
-                v.Vx014255 + v.Vx014256 + v.Vx014257 + v.Vx014258
-                + v.Vx014259 + v.Vx014260 + v.Vx014261 + v.Vx014263
-            ),
-            "7.11": d.ingresos_ano.get("7.11", CERO),
-            "7.13": d.ingresos_ano.get("7.13", CERO),
-            "7.14": d.ingresos_ano.get(
-                "7.14",
-                v.Vx010118 + v.Vx012830 + v.Vx010240 + v.Vx013639,
-            ),
-            "7.15": IngresosService._b_715(calc4064, calc4075, v),
-            "7.16": d.ingresos_ano.get("7.16", CERO),
-            "7.17": IngresosService._b_717(v),
-            "7.18": IngresosService._b_718(v),
-            "7.19": d.ingresos_ano.get(
-                "7.19",
-                v.Vx013633 + v.Vx013634 + v.Vx013635 + v.Vx013636
-                + v.Vx013637 + v.Vx013638,
-            ),
-            "7.20": d.ingresos_ano.get(
-                "7.20",
-                v.Vx013640 + v.Vx013641 + v.Vx013642 + v.Vx013643
-                + v.Vx013644 + v.Vx013645,
-            ),
-            "7.25": CERO,
-            "7.26": CERO,
-            "7.27": d.ingresos_ano.get("7.27", CERO),
-        }
+        # Digitados como variables: Ingresos <fila><col>
+        for fila, monto in d.ingresos_ano.items():
+            contexto[f"Ingresos {fila}B"] = monto
+        for fila, monto in d.monto_no_percibido.items():
+            contexto[f"Ingresos {fila}C"] = monto
+        for fila, monto in d.no_considerar_patrimonio.items():
+            contexto[f"Ingresos {fila}D"] = monto
+        for fila, monto in d.factura_renta_presunta.items():
+            contexto[f"Ingresos {fila}E"] = monto
+        for fila, monto in d.ingresos_adeudados_at_anterior.items():
+            contexto[f"Ingresos {fila}H (Modificado)"] = monto
 
-        # --- Col. F: Monto Ingreso Percibido por fila ---
-        f = self._calcular_f(b, h, d)
+        # --- Col. H: override digitado > vector como arboles ---
+        reglas_h = {
+            "7.1": "Vx014255",
+            "7.2": "Vx014256",
+            "7.3": "Vx014257",
+            "7.4": "Vx014258",
+            "7.5": "Vx014259",
+            "7.6": "Vx014260",
+            "7.7": "Vx014261",
+            "7.9": "Vx014263",
+            "7.14": "Vx014264",
+            "7.15": "Vx014265",
+            "7.17": "Vx014266",
+            "7.18": "Vx014267",
+            "7.20": "Vx014262",
+        }
+        h_valores: dict[str, Decimal] = {}
+        h_inspectores: dict[str, InspectorFormula] = {}
+        for fila, vec_key in reglas_h.items():
+            arbol_h = _con_override(
+                Var(f"Ingresos {fila}H (Modificado)", origen="digitado"),
+                Var(vec_key, origen="vector"),
+            )
+            resultado_h = arbol_h.resolver(contexto)
+            h_valores[fila] = resultado_h.valor
+            if mostrar_formulas:
+                h_inspectores[fila] = _a_inspector(resultado_h)
+
+        # --- Arboles de Col. B ---
+        arboles_b = self._construir_arboles_b()
+
+        # --- Resolver Col. B ---
+        b_valores: dict[str, Decimal] = {}
+        b_inspectores: dict[str, InspectorFormula] = {}
+        for codigo, arbol in arboles_b.items():
+            resultado = arbol.resolver(contexto)
+            b_valores[codigo] = resultado.valor
+            contexto[f"Ingresos {codigo}B"] = resultado.valor
+            if mostrar_formulas:
+                b_inspectores[codigo] = _a_inspector(resultado)
+
+        # --- Col. F ---
+        f_valores: dict[str, Decimal] = {}
+        f_inspectores: dict[str, InspectorFormula] = {}
+        for codigo in self._filas_con_f():
+            arbol_f = self._arbol_f(codigo, h_valores)
+            resultado = arbol_f.resolver(contexto)
+            f_valores[codigo] = resultado.valor
+            contexto[f"Ingresos {codigo}F"] = resultado.valor
+            if mostrar_formulas:
+                f_inspectores[codigo] = _a_inspector(resultado)
 
         # --- Totalizadores ---
-        # Segun el SII, el total debe representar la Columna F (Monto Ingreso Percibido)
-        # Se usa .get() porque filas como 7.25 y 7.26 no tienen calculo de F definido
-        fila_7_12 = POS(
-            f.get("7.1", CERO) + f.get("7.2", CERO) + f.get("7.3", CERO)
-            + f.get("7.4", CERO) + f.get("7.5", CERO) + f.get("7.6", CERO)
-            + f.get("7.7", CERO) - f.get("7.8", CERO) + f.get("7.9", CERO)
-            + f.get("7.11", CERO)
-        )
-        total_ingresos = (
-            fila_7_12
-            + f.get("7.13", CERO) + f.get("7.14", CERO) + f.get("7.15", CERO)
-            + f.get("7.16", CERO) + f.get("7.17", CERO) + f.get("7.18", CERO)
-            + f.get("7.19", CERO) + f.get("7.20", CERO) + f.get("7.25", CERO)
-            + f.get("7.26", CERO) + f.get("7.27", CERO) + f.get("7.10", CERO)
-        )
+        total = self._resolver_totalizadores(f_valores)
 
-        filas = self._armar_filas(b, f, h)
+        # --- Armar respuesta ---
+        filas = self._armar_filas(
+            b_valores,
+            f_valores,
+            h_valores,
+            b_inspectores if mostrar_formulas else None,
+            h_inspectores if mostrar_formulas else None,
+            f_inspectores if mostrar_formulas else None,
+        )
         avisos = self._calcular_avisos(calc4064, externos.CRRP, v)
 
         return IngresosResponse(
             filas=filas,
             totales=TotalizadoresIngresos(
-                fila_7_12=fila_7_12,
-                fila_7_total=total_ingresos,
+                fila_7_12=total["fila_7_12"],
+                fila_7_total=total["fila_7_total"],
             ),
             avisos=avisos,
         )
-# --------------------------------------------------------------- #
-    # Funciones puras de formula (columna B)
-    # --------------------------------------------------------------- #
-    @staticmethod
-    def _max_d(a: Decimal, s: Decimal) -> Decimal:
-        """MAX(a; s) con Decimal."""
-        return a if a > s else s
 
-    @staticmethod
-    def _b_71(v) -> Decimal:
-        # MAX(Vx012188; Vx013384 + Vx013394 + Vx013395 + Vx013396)
-        return IngresosService._max_d(
-            v.Vx012188,
-            (v.Vx013384 + v.Vx013394 + v.Vx013395 + v.Vx013396),
-        )
+    # ------------------------------------------------------------------
+    # Construccion de arboles de Col. B
+    # ------------------------------------------------------------------
 
-    @staticmethod
-    def _b_72(v) -> Decimal:
-        # MAX(Vx012194 - Vx013257;
-        #     POS(Vx013372 - Vx013381) + Vx013387 + Vx013382 + Vx013383)
-        return IngresosService._max_d(
-            v.Vx012194 - v.Vx013257,
-            (POS(v.Vx013372 - v.Vx013381)
-             + v.Vx013387 + v.Vx013382 + v.Vx013383),
-        )
+    def _construir_arboles_b(self) -> dict[str, Nodo]:
+        """Devuelve {codigo_fila: Nodo} con las formulas de Col. B."""
 
-    @staticmethod
-    def _b_73(v) -> Decimal:
-        # MAX(Vx012189; Vx013365+...+Vx013371 + Vx013385)
-        return IngresosService._max_d(
-            v.Vx012189,
-            (v.Vx013365 + v.Vx013366 + v.Vx013367 + v.Vx013368
-             + v.Vx013369 + v.Vx013370 + v.Vx013371 + v.Vx013385),
-        )
+        def dig_b(fila: str) -> Nodo:
+            return Var(f"Ingresos {fila}B", origen="digitado")
 
-    @staticmethod
-    def _b_715(calc4064, calc4075, v) -> Decimal:
-        """Caso fila 7.15:
-        Si Calc4064 > 0                               => Calc4064
-        Si Calc4075==1 y (Calc4064==0 o Calc4064=='N') => 0
-        Sino                                           => Vx012209
-        """
-        if isinstance(calc4064, Decimal) and calc4064 > CERO:
-            return calc4064
-        if calc4075 == 1 and (
-            not isinstance(calc4064, Decimal) or calc4064 == CERO
-        ):
-            return CERO
-        return v.Vx012209
-
-    @staticmethod
-    def _b_717(v) -> Decimal:
-        # POS(Vx010145 - Vx012210)
-        # + POS(Vx010357 + Vx010974 - Vx010358)
-        # + POS(Vx010059 - (Vx010088 + Vx010985))
-        return (
-            POS(v.Vx010145 - v.Vx012210)
-            + POS(v.Vx010357 + v.Vx010974 - v.Vx010358)
-            + POS(v.Vx010059 - (v.Vx010088 + v.Vx010985))
-        )
-# --------------------------------------------------------------- #
-    # Columna F (Monto Ingreso Percibido)
-    # --------------------------------------------------------------- #
-    def _calcular_f(self, b: dict, h: dict, d) -> dict:
-        """Calcula el Monto Ingreso Percibido (col. F) por fila."""
-
-        def basica(row):
-            return POS(
-                b[row]
-                - d.monto_no_percibido.get(row, CERO)
-                - d.no_considerar_patrimonio.get(row, CERO)
-                - d.factura_renta_presunta.get(row, CERO)
-            )
-
-        def avanzada(row):
-            return POS(
-                b[row]
-                + h.get(row, CERO)
-                - d.monto_no_percibido.get(row, CERO)
-                - d.no_considerar_patrimonio.get(row, CERO)
-                - d.factura_renta_presunta.get(row, CERO)
-            )
-
-        filas_basicas = {
-            "7.1", "7.2", "7.3", "7.4", "7.5", "7.6", "7.7", "7.8", "7.9",
-            "7.10", "7.11", "7.13", "7.16", "7.19", "7.27",
+        return {
+            "7.1": MaxD(
+                Var("Vx012188", "vector"),
+                (
+                    Var("Vx013384", "vector")
+                    + Var("Vx013394", "vector")
+                    + Var("Vx013395", "vector")
+                    + Var("Vx013396", "vector")
+                ),
+            ),
+            "7.2": MaxD(
+                Var("Vx012194", "vector") - Var("Vx013257", "vector"),
+                (
+                    Pos(Var("Vx013372", "vector") - Var("Vx013381", "vector"))
+                    + Var("Vx013387", "vector")
+                    + Var("Vx013382", "vector")
+                    + Var("Vx013383", "vector")
+                ),
+            ),
+            "7.3": MaxD(
+                Var("Vx012189", "vector"),
+                (
+                    Var("Vx013365", "vector")
+                    + Var("Vx013366", "vector")
+                    + Var("Vx013367", "vector")
+                    + Var("Vx013368", "vector")
+                    + Var("Vx013369", "vector")
+                    + Var("Vx013370", "vector")
+                    + Var("Vx013371", "vector")
+                    + Var("Vx013385", "vector")
+                ),
+            ),
+            "7.4": Var("Vx012191", "vector"),
+            "7.5": MaxD(
+                Var("Vx012192", "vector"),
+                Var("Vx013379", "vector") + Var("Vx013380", "vector"),
+            ),
+            "7.6": MaxD(
+                Var("Vx012193", "vector"),
+                Var("Vx013378", "vector"),
+            ),
+            "7.7": MaxD(
+                Var("Vx012195", "vector"),
+                (
+                    Var("Vx013373", "vector")
+                    + Var("Vx013374", "vector")
+                    + Var("Vx013375", "vector")
+                    + Var("Vx013376", "vector")
+                ),
+            ),
+            "7.8": Var("Vx012197", "vector"),
+            "7.9": MaxD(
+                Var("Vx013257", "vector"),
+                Var("Vx013377", "vector"),
+            ),
+            "7.10": (
+                Var("Vx014255", "vector")
+                + Var("Vx014256", "vector")
+                + Var("Vx014257", "vector")
+                + Var("Vx014258", "vector")
+                + Var("Vx014259", "vector")
+                + Var("Vx014260", "vector")
+                + Var("Vx014261", "vector")
+                + Var("Vx014263", "vector")
+            ),
+            "7.11": dig_b("7.11"),
+            "7.13": dig_b("7.13"),
+            "7.14": _con_override(
+                dig_b("7.14"),
+                (
+                    Var("Vx010118", "vector")
+                    + Var("Vx012830", "vector")
+                    + Var("Vx010240", "vector")
+                    + Var("Vx013639", "vector")
+                ),
+            ),
+            "7.15": self._arbol_715(),
+            "7.16": dig_b("7.16"),
+            "7.17": (
+                Pos(Var("Vx010145", "vector") - Var("Vx012210", "vector"))
+                + Pos(
+                    Var("Vx010357", "vector")
+                    + Var("Vx010974", "vector")
+                    - Var("Vx010358", "vector")
+                )
+                + Pos(
+                    Var("Vx010059", "vector")
+                    - (Var("Vx010088", "vector") + Var("Vx010985", "vector"))
+                )
+            ),
+            "7.18": (
+                Pos(Var("Vx010238", "vector") - Var("Vx010239", "vector"))
+                + Pos(Var("Vx010236", "vector") - Var("Vx010237", "vector"))
+                + Pos(Var("Vx010934", "vector") - Var("Vx011015", "vector"))
+            ),
+            "7.19": _con_override(
+                dig_b("7.19"),
+                (
+                    Var("Vx013633", "vector")
+                    + Var("Vx013634", "vector")
+                    + Var("Vx013635", "vector")
+                    + Var("Vx013636", "vector")
+                    + Var("Vx013637", "vector")
+                    + Var("Vx013638", "vector")
+                ),
+            ),
+            "7.20": _con_override(
+                dig_b("7.20"),
+                (
+                    Var("Vx013640", "vector")
+                    + Var("Vx013641", "vector")
+                    + Var("Vx013642", "vector")
+                    + Var("Vx013643", "vector")
+                    + Var("Vx013644", "vector")
+                    + Var("Vx013645", "vector")
+                ),
+            ),
+            "7.25": Constante(CERO),
+            "7.26": Constante(CERO),
+            "7.27": dig_b("7.27"),
         }
-        filas_avanzadas = {"7.14", "7.15", "7.17", "7.18", "7.20"}
 
-        result = {}
-        for r in filas_basicas:
-            result[r] = basica(r)
-        for r in filas_avanzadas:
-            result[r] = avanzada(r)
-        return result
+    # ------------------------------------------------------------------
+    # Arbol condicional 7.15
+    # ------------------------------------------------------------------
 
-    def _armar_filas(self, b: dict, f: dict, h: dict) -> list:
+    def _arbol_715(self) -> Nodo:
+        """SI(Calc4064 > 0 => Calc4064;
+        SI(Calc4075==1 and Calc4064==0 => 0; Vx012209))"""
+        return Si(
+            cond_fn=lambda ctx: isinstance(ctx.get("Calc4064"), Decimal) and ctx["Calc4064"] > CERO,
+            verdadero=Var("Calc4064", origen="externo"),
+            falso=Si(
+                cond_fn=lambda ctx: (
+                    ctx.get("Calc4075") == 1
+                    and (not isinstance(ctx.get("Calc4064"), Decimal) or ctx["Calc4064"] == CERO)
+                ),
+                verdadero=Constante(CERO),
+                falso=Var("Vx012209", origen="vector"),
+                descripcion="Calc4075==1 y Calc4064==0",
+            ),
+            descripcion="Calc4064 > 0",
+        )
+
+    # ------------------------------------------------------------------
+    # Columna F
+    # ------------------------------------------------------------------
+
+    def _filas_con_f(self) -> set[str]:
+        return {
+            "7.1",
+            "7.2",
+            "7.3",
+            "7.4",
+            "7.5",
+            "7.6",
+            "7.7",
+            "7.8",
+            "7.9",
+            "7.10",
+            "7.11",
+            "7.13",
+            "7.14",
+            "7.15",
+            "7.16",
+            "7.17",
+            "7.18",
+            "7.19",
+            "7.20",
+            "7.27",
+        }
+
+    def _arbol_f(self, codigo: str, h_valores: dict) -> Nodo:
+        """Construye el arbol de Col. F: POS(B +/- H - C - D - E)."""
+        avanzadas = {"7.14", "7.15", "7.17", "7.18", "7.20"}
+        b = Var(f"Ingresos {codigo}B", origen="calculado")
+        c = Var(f"Ingresos {codigo}C", origen="digitado")
+        d_col = Var(f"Ingresos {codigo}D", origen="digitado")
+        e = Var(f"Ingresos {codigo}E", origen="digitado")
+
+        if codigo in avanzadas:
+            h_val = h_valores.get(codigo, CERO)
+            return Pos(b + Constante(h_val) - c - d_col - e)
+        return Pos(b - c - d_col - e)
+
+    # ------------------------------------------------------------------
+    # Totalizadores
+    # ------------------------------------------------------------------
+
+    def _resolver_totalizadores(self, f_vals: dict) -> dict:
+        """Calcula fila_7_12 y fila_7_total desde los valores de F."""
+        f12 = (
+            f_vals.get("7.1", CERO)
+            + f_vals.get("7.2", CERO)
+            + f_vals.get("7.3", CERO)
+            + f_vals.get("7.4", CERO)
+            + f_vals.get("7.5", CERO)
+            + f_vals.get("7.6", CERO)
+            + f_vals.get("7.7", CERO)
+            - f_vals.get("7.8", CERO)
+            + f_vals.get("7.9", CERO)
+            + f_vals.get("7.11", CERO)
+        )
+        fila_7_12 = f12 if f12 > CERO else CERO
+
+        total = (
+            fila_7_12
+            + f_vals.get("7.13", CERO)
+            + f_vals.get("7.14", CERO)
+            + f_vals.get("7.15", CERO)
+            + f_vals.get("7.16", CERO)
+            + f_vals.get("7.17", CERO)
+            + f_vals.get("7.18", CERO)
+            + f_vals.get("7.19", CERO)
+            + f_vals.get("7.20", CERO)
+            + f_vals.get("7.25", CERO)
+            + f_vals.get("7.26", CERO)
+            + f_vals.get("7.27", CERO)
+            + f_vals.get("7.10", CERO)
+        )
+        return {"fila_7_12": fila_7_12, "fila_7_total": total}
+
+    # ------------------------------------------------------------------
+    # Armado de respuesta
+    # ------------------------------------------------------------------
+
+    def _armar_filas(
+        self,
+        b: dict,
+        f: dict,
+        h: dict,
+        ins_b: dict[str, InspectorFormula] | None,
+        ins_h: dict[str, InspectorFormula] | None,
+        ins_f: dict[str, InspectorFormula] | None,
+    ) -> list:
         codigos = [
-            "7.1", "7.2", "7.3", "7.4", "7.5", "7.6", "7.7", "7.8",
-            "7.9", "7.10", "7.11", "7.13", "7.14", "7.15", "7.16", "7.17",
-            "7.18", "7.19", "7.20", "7.25", "7.26", "7.27",
+            "7.1",
+            "7.2",
+            "7.3",
+            "7.4",
+            "7.5",
+            "7.6",
+            "7.7",
+            "7.8",
+            "7.9",
+            "7.10",
+            "7.11",
+            "7.13",
+            "7.14",
+            "7.15",
+            "7.16",
+            "7.17",
+            "7.18",
+            "7.19",
+            "7.20",
+            "7.25",
+            "7.26",
+            "7.27",
         ]
         filas = []
         for codigo in codigos:
             concepto, f22 = self.CONCEPTOS[codigo]
+            # Construir diccionario de inspectores para esta fila
+            inspectores_fila: dict[str, InspectorFormula] | None = None
+            if ins_b is not None:
+                inspectores_fila = {}
+                if codigo in ins_b:
+                    inspectores_fila["ingresos_ano"] = ins_b[codigo]
+                if ins_h and codigo in ins_h:
+                    inspectores_fila["ingresos_adeudados_at_anterior"] = ins_h[codigo]
+                if ins_f and codigo in ins_f:
+                    inspectores_fila["monto_ingreso_percibido"] = ins_f[codigo]
             filas.append(
                 FilaIngreso(
                     codigo=codigo,
@@ -273,28 +459,28 @@ class IngresosService:
                     ingresos_ano=b.get(codigo),
                     ingresos_adeudados_at_anterior=h.get(codigo),
                     monto_ingreso_percibido=f.get(codigo),
+                    inspectores=inspectores_fila,
                 )
             )
         return filas
 
     def _calcular_avisos(self, calc4064, crrp, v) -> AvisosIngresos:
-        # Aviso 7.10 (tooltip): sumatoria H en 7.10 > 0 => monto propuesto
         monto_7_10 = (
-            v.Vx014255 + v.Vx014256 + v.Vx014257 + v.Vx014258
-            + v.Vx014259 + v.Vx014260 + v.Vx014261 + v.Vx014263
+            v.Vx014255
+            + v.Vx014256
+            + v.Vx014257
+            + v.Vx014258
+            + v.Vx014259
+            + v.Vx014260
+            + v.Vx014261
+            + v.Vx014263
         )
         aviso_7_10 = monto_7_10 > CERO
 
-        # Aviso arriendos BR: si Calc4064 NO > 0 .y. Vx012209 > 0
-        calc4064_no_existe = not (
-            isinstance(calc4064, Decimal) and calc4064 > CERO
-        )
+        calc4064_no_existe = not (isinstance(calc4064, Decimal) and calc4064 > CERO)
         aviso_arriendos = calc4064_no_existe and (v.Vx012209 > CERO)
 
-        # Visibilidad de columnas segun reglas de negocio
-        #  - 'No considerar es de Patrimonio Personal' solo si Vx010042=1
-        #  - 'Facturas de Renta Presunta' solo si el contribuyente es CRRP
-        mostrar_columna_patrimonio = (v.Vx010042 == 1)
+        mostrar_columna_patrimonio = v.Vx010042 == 1
         mostrar_columna_renta_presunta = crrp
 
         return AvisosIngresos(
@@ -304,12 +490,30 @@ class IngresosService:
             mostrar_columna_renta_presunta=mostrar_columna_renta_presunta,
         )
 
-    @staticmethod
-    def _b_718(v) -> Decimal:
-        # POS(Vx010238 - Vx010239) + POS(Vx010236 - Vx010237)
-        # + POS(Vx010934 - Vx011015)
-        return (
-            POS(v.Vx010238 - v.Vx010239)
-            + POS(v.Vx010236 - v.Vx010237)
-            + POS(v.Vx010934 - v.Vx011015)
-        )
+
+# ------------------------------------------------------------------
+# Helpers a nivel modulo
+# ------------------------------------------------------------------
+
+
+def _con_override(digitado: Nodo, formula: Nodo) -> Nodo:
+    """Override: si el contribuyente ingreso un valor (>0), se usa; sino la formula."""
+    return ReemplazoManual(digitado, formula)
+
+
+def _a_inspector(r: ResultadoNodo) -> InspectorFormula:
+    """Convierte un ResultadoNodo en InspectorFormula (schema Pydantic)."""
+    return InspectorFormula(
+        valor=r.valor,
+        literal=r.literal,
+        evaluado=r.evaluado,
+        variables_usadas=[
+            VariableInfo(
+                nombre=v["nombre"],
+                valor=v["valor"],
+                origen=v["origen"],
+            )
+            for v in r.variables_usadas
+        ],
+        pasos=list(r.pasos),
+    )

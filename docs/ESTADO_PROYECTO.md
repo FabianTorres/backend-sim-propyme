@@ -39,6 +39,14 @@
   - Actualizado `tests/test_auditor.py` con los nuevos strings esperados; 18/18 tests pasan.
   - Implementado un Estándar Global de Nomenclatura para el inspector: Se eliminaron variables internas como `dig_C_7.1` en favor del formato legible `[Módulo] [Fila][Columna]` (ej. `Ingresos 7.1B`), facilitando la lectura para QA y Contadores.
   - *Pendiente de inicio.*
+- [x] **Corrección Página 1: Ingresos — Fila 7.12 Columnas C, D, E**
+  - Agregados campos `monto_no_percibido`, `no_considerar_patrimonio` y `factura_renta_presunta` a `FilaIngreso` (schema de salida).
+  - Implementados árboles de expresiones `POS(7.1..+7.7-7.8+7.9+7.11)` para las columnas C, D y E de la fila 7.12 en `IngresosService`.
+  - Inyección de resultados en el contexto plano como `Ingresos 7.12C/D/E` y mapeo a la respuesta de filas.
+  - Exposición de inspectores para C, D, E en modo auditoría (`mostrar_formulas=True`) para la fila 7.12.
+  - Ajustado `_filas_con_f` para excluir 7.25 y 7.26, alineándose con la tabla normativa (sin fórmula de Columna F).
+  - Tests actualizados/creados en `test_ingresos.py`, `test_auditor.py` y `test_api_simulador.py`. Suite: 21/21 pasa.
+- [ ] **Página 2: Egresos**
 - [ ] **Página 3: Retiros**
   - *Pendiente de inicio.*
 - [ ] **Página 4: Determinación RLI**

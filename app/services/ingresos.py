@@ -138,6 +138,17 @@ class IngresosService:
             if mostrar_formulas:
                 b_inspectores[codigo] = _a_inspector(resultado)
 
+        # --- Col. C, D, E de la fila totalizadora 7.12 ---
+        arboles_7_12_cde = self._construir_arboles_7_12_cde()
+        cde_7_12_valores: dict[str, Decimal] = {}
+        cde_7_12_inspectores: dict[str, InspectorFormula] = {}
+        for col, arbol in arboles_7_12_cde.items():
+            resultado = arbol.resolver(contexto)
+            cde_7_12_valores[col] = resultado.valor
+            contexto[f"Ingresos 7.12{col}"] = resultado.valor
+            if mostrar_formulas:
+                cde_7_12_inspectores[col] = _a_inspector(resultado)
+
         # --- Col. F ---
         f_valores: dict[str, Decimal] = {}
         f_inspectores: dict[str, InspectorFormula] = {}
@@ -154,9 +165,12 @@ class IngresosService:
             b_valores,
             f_valores,
             h_valores,
+            d,
+            cde_7_12_valores,
             b_inspectores if mostrar_formulas else None,
             h_inspectores if mostrar_formulas else None,
             f_inspectores if mostrar_formulas else None,
+            cde_7_12_inspectores if mostrar_formulas else None,
         )
         avisos = self._calcular_avisos(calc4064, externos.CRRP, v)
 
@@ -314,9 +328,31 @@ class IngresosService:
         }
 
     # ------------------------------------------------------------------
-    # Arbol condicional 7.15
+    # Construccion de arboles de Col. C, D, E de la fila 7.12
     # ------------------------------------------------------------------
 
+    def _construir_arboles_7_12_cde(self) -> dict[str, Nodo]:
+        """Devuelve {C|D|E: Nodo} con POS(7.1..+7.7-7.8+7.9+7.11) por columna."""
+
+        def _arbol_col(col: str) -> Nodo:
+            return Pos(
+                Var(f"Ingresos 7.1{col}", "digitado")
+                + Var(f"Ingresos 7.2{col}", "digitado")
+                + Var(f"Ingresos 7.3{col}", "digitado")
+                + Var(f"Ingresos 7.4{col}", "digitado")
+                + Var(f"Ingresos 7.5{col}", "digitado")
+                + Var(f"Ingresos 7.6{col}", "digitado")
+                + Var(f"Ingresos 7.7{col}", "digitado")
+                - Var(f"Ingresos 7.8{col}", "digitado")
+                + Var(f"Ingresos 7.9{col}", "digitado")
+                + Var(f"Ingresos 7.11{col}", "digitado")
+            )
+
+        return {"C": _arbol_col("C"), "D": _arbol_col("D"), "E": _arbol_col("E")}
+
+    # ------------------------------------------------------------------
+    # Arbol condicional 7.15
+    # ------------------------------------------------------------------
     def _arbol_715(self) -> Nodo:
         """SI(Calc4064 > 0 => Calc4064;
         SI(Calc4075==1 and Calc4064==0 => 0; Vx012209))"""
@@ -341,6 +377,7 @@ class IngresosService:
 
     def _filas_con_f(self) -> list[str]:
         # El orden importa: 7.12 requiere que las anteriores existan, y 7 requiere de 7.12.
+        # 7.25 y 7.26 no poseen formula de Col. F segun la tabla normativa.
         return [
             "7.1",
             "7.2",
@@ -361,8 +398,6 @@ class IngresosService:
             "7.18",
             "7.19",
             "7.20",
-            "7.25",
-            "7.26",
             "7.27",
             "7.12",
             "7",
@@ -457,9 +492,12 @@ class IngresosService:
         b: dict,
         f: dict,
         h: dict,
+        d: CamposDigitados,
+        cde_7_12: dict[str, Decimal],
         ins_b: dict[str, InspectorFormula] | None,
         ins_h: dict[str, InspectorFormula] | None,
         ins_f: dict[str, InspectorFormula] | None,
+        ins_cde_7_12: dict[str, InspectorFormula] | None,
     ) -> list:
         codigos = [
             "7.1",
@@ -490,6 +528,21 @@ class IngresosService:
         filas = []
         for codigo in codigos:
             concepto, f22 = self.CONCEPTOS[codigo]
+
+            # Columnas C, D, E: digitadas para la mayoria de las filas; calculadas para 7.12
+            if codigo == "7.12":
+                c_val = cde_7_12.get("C", CERO)
+                d_val = cde_7_12.get("D", CERO)
+                e_val = cde_7_12.get("E", CERO)
+            elif codigo == "7":
+                c_val = None
+                d_val = None
+                e_val = None
+            else:
+                c_val = d.monto_no_percibido.get(codigo, CERO)
+                d_val = d.no_considerar_patrimonio.get(codigo, CERO)
+                e_val = d.factura_renta_presunta.get(codigo, CERO)
+
             # Construir diccionario de inspectores para esta fila
             inspectores_fila: dict[str, InspectorFormula] | None = None
             if ins_b is not None:
@@ -500,6 +553,10 @@ class IngresosService:
                     inspectores_fila["ingresos_adeudados_at_anterior"] = ins_h[codigo]
                 if ins_f and codigo in ins_f:
                     inspectores_fila["monto_ingreso_percibido"] = ins_f[codigo]
+                if ins_cde_7_12 and codigo == "7.12":
+                    inspectores_fila["monto_no_percibido"] = ins_cde_7_12["C"]
+                    inspectores_fila["no_considerar_patrimonio"] = ins_cde_7_12["D"]
+                    inspectores_fila["factura_renta_presunta"] = ins_cde_7_12["E"]
             filas.append(
                 FilaIngreso(
                     codigo=codigo,
@@ -507,6 +564,9 @@ class IngresosService:
                     codigo_f22=f22,
                     ingresos_ano=b.get(codigo),
                     ingresos_adeudados_at_anterior=h.get(codigo),
+                    monto_no_percibido=c_val,
+                    no_considerar_patrimonio=d_val,
+                    factura_renta_presunta=e_val,
                     monto_ingreso_percibido=f.get(codigo),
                     inspectores=inspectores_fila,
                 )

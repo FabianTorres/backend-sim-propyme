@@ -345,10 +345,17 @@ class FilaIngreso(BaseModel):
     ingresos_ano: Decimal | None = None
     # Col. H: montos adeudados por fila (Ingresos percibidos de AT anterior)
     ingresos_adeudados_at_anterior: Decimal | None = None
+    # Col. C: Monto No Percibido del anio (digitado o calculado en totalizador 7.12)
+    monto_no_percibido: Decimal | None = None
+    # Col. D: No considerar es de Patrimonio Personal (digitado o calculado en 7.12)
+    no_considerar_patrimonio: Decimal | None = None
+    # Col. E: Facturas de Actividad de Renta Presunta (digitado o calculado en 7.12)
+    factura_renta_presunta: Decimal | None = None
     # Col. F calculada (Monto Ingreso Percibido)
     monto_ingreso_percibido: Decimal | None = None
     # Modo Auditoria: inspectores por columna (solo cuando mostrar_formulas=True)
-    #   llaves: "ingresos_ano", "ingresos_adeudados_at_anterior", "monto_ingreso_percibido"
+    #   llaves: "ingresos_ano", "ingresos_adeudados_at_anterior", "monto_ingreso_percibido",
+    #   "monto_no_percibido", "no_considerar_patrimonio", "factura_renta_presunta"
     inspectores: dict[str, InspectorFormula] | None = Field(default=None)
 
 

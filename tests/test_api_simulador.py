@@ -36,6 +36,11 @@ def test_endpoint_simulador_ok(mock_payload):
     # Fila sin monto de AT anterior -> null
     assert filas["7.11"]["ingresos_adeudados_at_anterior"] is None
 
+    # Columnas C, D y E de la fila totalizadora 7.12
+    assert filas["7.12"]["monto_no_percibido"] == "100000"
+    assert filas["7.12"]["no_considerar_patrimonio"] == "0"
+    assert filas["7.12"]["factura_renta_presunta"] == "0"
+
     # Flags de visibilidad de columnas para el Frontend
     avisos = ingresos["avisos"]
     assert avisos["mostrar_columna_patrimonio"] is True

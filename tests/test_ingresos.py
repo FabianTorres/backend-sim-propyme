@@ -92,4 +92,36 @@ def test_override_col_b(datos_ingresos):
     assert _fila(response, "7.20").ingresos_ano == Decimal("66666")
 
     # Ruta no editable: la formula original se mantiene
+
+
+def test_totalizador_7_12_columnas_cde(datos_ingresos):
+    """7.12 suma C, D y E de las filas 7.1 a 7.11 usando POS(...)."""
+    v, e, d = datos_ingresos
+    d.monto_no_percibido["7.1"] = Decimal("10000")
+    d.monto_no_percibido["7.2"] = Decimal("20000")
+    d.monto_no_percibido["7.8"] = Decimal("50000")
+    d.no_considerar_patrimonio["7.1"] = Decimal("5000")
+    d.no_considerar_patrimonio["7.9"] = Decimal("15000")
+    d.factura_renta_presunta["7.3"] = Decimal("25000")
+    d.factura_renta_presunta["7.8"] = Decimal("10000")
+
+    response = IngresosService().calcular(v, e, d, mostrar_formulas=False)
+    fila = _fila(response, "7.12")
+
+    # C = 10000 + 20000 - 50000 = -20000 => POS = 0
+    assert fila.monto_no_percibido == Decimal("0")
+    # D = 5000 + 15000 = 20000
+    assert fila.no_considerar_patrimonio == Decimal("20000")
+    # E = 25000 - 10000 = 15000
+    assert fila.factura_renta_presunta == Decimal("15000")
+
+
+def test_fila_7_sin_columnas_cde(datos_ingresos):
+    """La fila total 7 no expone columnas C, D ni E."""
+    v, e, d = datos_ingresos
+    response = IngresosService().calcular(v, e, d, mostrar_formulas=False)
+    fila = _fila(response, "7")
+    assert fila.monto_no_percibido is None
+    assert fila.no_considerar_patrimonio is None
+    assert fila.factura_renta_presunta is None
     assert _fila(response, "7.1").ingresos_ano == Decimal("1000000")

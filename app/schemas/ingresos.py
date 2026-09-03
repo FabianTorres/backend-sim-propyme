@@ -9,6 +9,7 @@ Regla de negocio critica:
     puros de entrada digitados por el contribuyente. Ninguna formula aparece
     como editable en el request.
 """
+
 from decimal import Decimal
 from typing import Literal
 
@@ -240,6 +241,8 @@ class VectoresIngresos(BaseModel):
         if isinstance(value, str) and value.strip() == "":
             return Decimal("0")
         return value
+
+
 # ---------------------------------------------------------------------------
 # Variables externas (Calc)
 # ---------------------------------------------------------------------------
@@ -324,7 +327,9 @@ class InspectorFormula(BaseModel):
     literal: str = Field(description="Formula con nombres de variables")
     evaluado: str = Field(description="Formula con valores numericos reales")
     variables_usadas: list[VariableInfo] = Field(default_factory=list)
-    pasos: list[str] = Field(default_factory=list, description="Paso a paso de la resolucion matematica")
+    pasos: list[str] = Field(
+        default_factory=list, description="Paso a paso de la resolucion matematica"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -362,13 +367,14 @@ class AvisosIngresos(BaseModel):
     # Visibilidad de columnas segun reglas de negocio (para el Frontend)
     mostrar_columna_patrimonio: bool = Field(default=False)
     mostrar_columna_renta_presunta: bool = Field(default=False)
+    # Valores calculados para el mensaje de Empresario Individual
+    valor1_pcalc: Decimal = Field(default=Decimal("0"))
+    valor2_pcalc: Decimal = Field(default=Decimal("0"))
 
 
 class IngresosResponse(BaseModel):
     """Contrato de salida. Contiene unicamente campos calculados."""
 
     filas: list[FilaIngreso] = Field(default_factory=list)
-    totales: TotalizadoresIngresos = Field(
-        default_factory=TotalizadoresIngresos
-    )
+    totales: TotalizadoresIngresos = Field(default_factory=TotalizadoresIngresos)
     avisos: AvisosIngresos = Field(default_factory=AvisosIngresos)

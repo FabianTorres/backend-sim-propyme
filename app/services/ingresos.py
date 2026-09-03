@@ -56,6 +56,7 @@ class IngresosService:
         "7.25": ("Ingreso diferido pendiente art.14 D N8", None),
         "7.26": ("Incremento ingreso diferido", None),
         "7.27": ("Credito sobre Activos Fijos", 1405),
+        "7": ("TOTAL INGRESOS", 1410),
     }
 
     # ------------------------------------------------------------------
@@ -119,6 +120,8 @@ class IngresosService:
             )
             resultado_h = arbol_h.resolver(contexto)
             h_valores[fila] = resultado_h.valor
+            # --- AGREGAR ESTA LÍNEA ---
+            contexto[f"Ingresos {fila}H"] = resultado_h.valor
             if mostrar_formulas:
                 h_inspectores[fila] = _a_inspector(resultado_h)
 
@@ -146,9 +149,6 @@ class IngresosService:
             if mostrar_formulas:
                 f_inspectores[codigo] = _a_inspector(resultado)
 
-        # --- Totalizadores ---
-        total = self._resolver_totalizadores(f_valores)
-
         # --- Armar respuesta ---
         filas = self._armar_filas(
             b_valores,
@@ -163,8 +163,8 @@ class IngresosService:
         return IngresosResponse(
             filas=filas,
             totales=TotalizadoresIngresos(
-                fila_7_12=total["fila_7_12"],
-                fila_7_total=total["fila_7_total"],
+                fila_7_12=f_valores.get("7.12", CERO),
+                fila_7_total=f_valores.get("7", CERO),
             ),
             avisos=avisos,
         )
@@ -235,14 +235,14 @@ class IngresosService:
                 Var("Vx013377", "vector"),
             ),
             "7.10": (
-                Var("Vx014255", "vector")
-                + Var("Vx014256", "vector")
-                + Var("Vx014257", "vector")
-                + Var("Vx014258", "vector")
-                + Var("Vx014259", "vector")
-                + Var("Vx014260", "vector")
-                + Var("Vx014261", "vector")
-                + Var("Vx014263", "vector")
+                Var("Ingresos 7.1H", "calculado")
+                + Var("Ingresos 7.2H", "calculado")
+                + Var("Ingresos 7.3H", "calculado")
+                + Var("Ingresos 7.4H", "calculado")
+                + Var("Ingresos 7.5H", "calculado")
+                + Var("Ingresos 7.6H", "calculado")
+                + Var("Ingresos 7.7H", "calculado")
+                + Var("Ingresos 7.9H", "calculado")
             ),
             "7.11": dig_b("7.11"),
             "7.13": dig_b("7.13"),
@@ -299,6 +299,18 @@ class IngresosService:
             "7.25": Constante(CERO),
             "7.26": Constante(CERO),
             "7.27": dig_b("7.27"),
+            "7.12": Pos(
+                Var("Ingresos 7.1B", "calculado")
+                + Var("Ingresos 7.2B", "calculado")
+                + Var("Ingresos 7.3B", "calculado")
+                + Var("Ingresos 7.4B", "calculado")
+                + Var("Ingresos 7.5B", "calculado")
+                + Var("Ingresos 7.6B", "calculado")
+                + Var("Ingresos 7.7B", "calculado")
+                - Var("Ingresos 7.8B", "calculado")
+                + Var("Ingresos 7.9B", "calculado")
+                + Var("Ingresos 7.11B", "calculado")
+            ),
         }
 
     # ------------------------------------------------------------------
@@ -327,8 +339,9 @@ class IngresosService:
     # Columna F
     # ------------------------------------------------------------------
 
-    def _filas_con_f(self) -> set[str]:
-        return {
+    def _filas_con_f(self) -> list[str]:
+        # El orden importa: 7.12 requiere que las anteriores existan, y 7 requiere de 7.12.
+        return [
             "7.1",
             "7.2",
             "7.3",
@@ -348,11 +361,45 @@ class IngresosService:
             "7.18",
             "7.19",
             "7.20",
+            "7.25",
+            "7.26",
             "7.27",
-        }
+            "7.12",
+            "7",
+        ]
 
     def _arbol_f(self, codigo: str, h_valores: dict) -> Nodo:
         """Construye el arbol de Col. F: POS(B +/- H - C - D - E)."""
+        if codigo == "7.12":
+            return Pos(
+                Var("Ingresos 7.1F", "calculado")
+                + Var("Ingresos 7.2F", "calculado")
+                + Var("Ingresos 7.3F", "calculado")
+                + Var("Ingresos 7.4F", "calculado")
+                + Var("Ingresos 7.5F", "calculado")
+                + Var("Ingresos 7.6F", "calculado")
+                + Var("Ingresos 7.7F", "calculado")
+                - Var("Ingresos 7.8F", "calculado")
+                + Var("Ingresos 7.9F", "calculado")
+                + Var("Ingresos 7.11F", "calculado")
+            )
+        if codigo == "7":
+            return (
+                Var("Ingresos 7.12F", "calculado")
+                + Var("Ingresos 7.13F", "calculado")
+                + Var("Ingresos 7.14F", "calculado")
+                + Var("Ingresos 7.15F", "calculado")
+                + Var("Ingresos 7.16F", "calculado")
+                + Var("Ingresos 7.17F", "calculado")
+                + Var("Ingresos 7.18F", "calculado")
+                + Var("Ingresos 7.19F", "calculado")
+                + Var("Ingresos 7.20F", "calculado")
+                + Var("Ingresos 7.25F", "calculado")
+                + Var("Ingresos 7.26F", "calculado")
+                + Var("Ingresos 7.27F", "calculado")
+                + Var("Ingresos 7.10F", "calculado")
+            )
+
         avanzadas = {"7.14", "7.15", "7.17", "7.18", "7.20"}
         b = Var(f"Ingresos {codigo}B", origen="calculado")
         c = Var(f"Ingresos {codigo}C", origen="digitado")
@@ -368,38 +415,38 @@ class IngresosService:
     # Totalizadores
     # ------------------------------------------------------------------
 
-    def _resolver_totalizadores(self, f_vals: dict) -> dict:
-        """Calcula fila_7_12 y fila_7_total desde los valores de F."""
-        f12 = (
-            f_vals.get("7.1", CERO)
-            + f_vals.get("7.2", CERO)
-            + f_vals.get("7.3", CERO)
-            + f_vals.get("7.4", CERO)
-            + f_vals.get("7.5", CERO)
-            + f_vals.get("7.6", CERO)
-            + f_vals.get("7.7", CERO)
-            - f_vals.get("7.8", CERO)
-            + f_vals.get("7.9", CERO)
-            + f_vals.get("7.11", CERO)
-        )
-        fila_7_12 = f12 if f12 > CERO else CERO
+    # def _resolver_totalizadores(self, f_vals: dict) -> dict:
+    #     """Calcula fila_7_12 y fila_7_total desde los valores de F."""
+    #     f12 = (
+    #         f_vals.get("7.1", CERO)
+    #         + f_vals.get("7.2", CERO)
+    #         + f_vals.get("7.3", CERO)
+    #         + f_vals.get("7.4", CERO)
+    #         + f_vals.get("7.5", CERO)
+    #         + f_vals.get("7.6", CERO)
+    #         + f_vals.get("7.7", CERO)
+    #         - f_vals.get("7.8", CERO)
+    #         + f_vals.get("7.9", CERO)
+    #         + f_vals.get("7.11", CERO)
+    #     )
+    #     fila_7_12 = f12 if f12 > CERO else CERO
 
-        total = (
-            fila_7_12
-            + f_vals.get("7.13", CERO)
-            + f_vals.get("7.14", CERO)
-            + f_vals.get("7.15", CERO)
-            + f_vals.get("7.16", CERO)
-            + f_vals.get("7.17", CERO)
-            + f_vals.get("7.18", CERO)
-            + f_vals.get("7.19", CERO)
-            + f_vals.get("7.20", CERO)
-            + f_vals.get("7.25", CERO)
-            + f_vals.get("7.26", CERO)
-            + f_vals.get("7.27", CERO)
-            + f_vals.get("7.10", CERO)
-        )
-        return {"fila_7_12": fila_7_12, "fila_7_total": total}
+    #     total = (
+    #         fila_7_12
+    #         + f_vals.get("7.13", CERO)
+    #         + f_vals.get("7.14", CERO)
+    #         + f_vals.get("7.15", CERO)
+    #         + f_vals.get("7.16", CERO)
+    #         + f_vals.get("7.17", CERO)
+    #         + f_vals.get("7.18", CERO)
+    #         + f_vals.get("7.19", CERO)
+    #         + f_vals.get("7.20", CERO)
+    #         + f_vals.get("7.25", CERO)
+    #         + f_vals.get("7.26", CERO)
+    #         + f_vals.get("7.27", CERO)
+    #         + f_vals.get("7.10", CERO)
+    #     )
+    #     return {"fila_7_12": fila_7_12, "fila_7_total": total}
 
     # ------------------------------------------------------------------
     # Armado de respuesta
@@ -426,6 +473,7 @@ class IngresosService:
             "7.9",
             "7.10",
             "7.11",
+            "7.12",
             "7.13",
             "7.14",
             "7.15",
@@ -437,6 +485,7 @@ class IngresosService:
             "7.25",
             "7.26",
             "7.27",
+            "7",
         ]
         filas = []
         for codigo in codigos:
@@ -477,17 +526,115 @@ class IngresosService:
         )
         aviso_7_10 = monto_7_10 > CERO
 
-        calc4064_no_existe = not (isinstance(calc4064, Decimal) and calc4064 > CERO)
-        aviso_arriendos = calc4064_no_existe and (v.Vx012209 > CERO)
+        # Corrección Regla Bienes Raíces: Si Calc4064 > 0 .o. (no existe y Vx012209 > 0)
+        calc4064_valido = isinstance(calc4064, Decimal) and calc4064 > CERO
+        calc4064_no_existe = not isinstance(calc4064, Decimal) or calc4064 == CERO
+        aviso_arriendos = calc4064_valido or (calc4064_no_existe and v.Vx012209 > CERO)
 
         mostrar_columna_patrimonio = v.Vx010042 == 1
         mostrar_columna_renta_presunta = crrp
+
+        # Cálculo de variables para mensaje Empresario Individual
+        valor1 = (
+            v.Vx013601
+            + v.Vx013602
+            + v.Vx013603
+            + v.Vx013604
+            + v.Vx013506
+            + v.Vx013507
+            + v.Vx013508
+            + v.Vx013509
+            + v.Vx013510
+            + v.Vx013511
+            + v.Vx013512
+            + v.Vx013513
+            + v.Vx013560
+            + v.Vx013561
+            + v.Vx013562
+            + v.Vx013563
+            + v.Vx013564
+            + v.Vx013565
+            + v.Vx013566
+            + v.Vx013567
+            + v.Vx013568
+            + v.Vx013569
+            + v.Vx013570
+            + v.Vx013571
+            + v.Vx013605
+            + v.Vx013606
+            + v.Vx013607
+            + v.Vx013608
+            + v.Vx013588
+            + v.Vx013589
+            + v.Vx013590
+            + v.Vx013591
+            + v.Vx013592
+            + v.Vx013609
+            + v.Vx013610
+            + v.Vx013611
+            + v.Vx013612
+            + v.Vx013613
+            + v.Vx013614
+            + v.Vx013615
+            + v.Vx013616
+            + v.Vx012420
+            + v.Vx012424
+            + v.Vx013750
+        )
+
+        valor2 = (
+            v.Vx013514
+            + v.Vx013515
+            + v.Vx013516
+            + v.Vx013517
+            + v.Vx013518
+            + v.Vx013519
+            + v.Vx013520
+            + v.Vx013521
+            + v.Vx013523
+            + v.Vx013524
+            + v.Vx013525
+            + v.Vx013526
+            + v.Vx013528
+            + v.Vx013572
+            + v.Vx013573
+            + v.Vx013574
+            + v.Vx013575
+            + v.Vx013576
+            + v.Vx013577
+            + v.Vx013578
+            + v.Vx013579
+            + v.Vx013581
+            + v.Vx013582
+            + v.Vx013583
+            + v.Vx013584
+            + v.Vx013586
+            + v.Vx013617
+            + v.Vx013618
+            + v.Vx013593
+            + v.Vx013594
+            + v.Vx013619
+            + v.Vx013620
+            + v.Vx013595
+            + v.Vx013596
+            + v.Vx013621
+            + v.Vx013622
+            + v.Vx013623
+            + v.Vx013597
+            + v.Vx013598
+            + v.Vx013625
+            + v.Vx012421
+            + v.Vx012425
+            + v.Vx012426
+        )
 
         return AvisosIngresos(
             aviso_montos_propuestos_7_10=bool(aviso_7_10),
             aviso_arriendos_bienes_raices=aviso_arriendos,
             mostrar_columna_patrimonio=mostrar_columna_patrimonio,
             mostrar_columna_renta_presunta=mostrar_columna_renta_presunta,
+            valor1_pcalc=valor1,
+            valor2_pcalc=valor2,
         )
 
 

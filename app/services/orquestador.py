@@ -1,13 +1,15 @@
 """Servicio Orquestador Global del Simulador Propyme.
 
 Coordina la ejecucion de todos los modulos de calculo (Ingresos, Egresos,
-Retiros, RLI, Recuadro 17). Cada modulo se ejecuta en orden respetando sus
+Retiros, Determinacion RLI, Base Imponible, Capital Propio Tributario, RRE y
+Confirmacion de resultados). Cada modulo se ejecuta en orden respetando sus
 dependencias. Este servicio es el unico punto de entrada desde el endpoint.
 
 El Orquestador:
     1. Desempaqueta el SimuladorGlobalRequest.
-    2. Invoca secuencialmente cada servicio de pagina.
-    3. Consolida los resultados en SimuladorGlobalResponse.
+    2. Crea un ContextoSimulacion para transportar totales entre paginas.
+    3. Invoca secuencialmente cada servicio de pagina.
+    4. Consolida los resultados en SimuladorGlobalResponse.
 """
 
 from app.schemas.ingresos import CamposDigitados
@@ -15,6 +17,7 @@ from app.schemas.orquestador import (
     SimuladorGlobalRequest,
     SimuladorGlobalResponse,
 )
+from app.services.contexto import ContextoSimulacion
 from app.services.ingresos import IngresosService
 
 
@@ -26,36 +29,46 @@ class OrquestadorService:
     ) -> SimuladorGlobalResponse:
         """Calcula todos los modulos y retorna la respuesta global unificada."""
 
-        # --- Modulo 1: Ingresos ---
-        digitados_ingresos = (
-            request.digitados.ingresos or CamposDigitados()
+        # Contexto compartido: transporta totales y el flag CDEICalc global.
+        contexto = ContextoSimulacion(
+            patrimonio_personal=request.patrimonio_personal,
         )
         mostrar_formulas = getattr(request, "mostrar_formulas", False)
+
+        # --- Modulo 1: Ingresos (Pagina 1) ---
+        digitados_ingresos = request.digitados.ingresos or CamposDigitados()
         resultado_ingresos = IngresosService().calcular(
             vectores=request.vectores,
             externos=request.externos,
             digitados=digitados_ingresos,
             mostrar_formulas=mostrar_formulas,
         )
+        # Totales que otras paginas consumiran (ej. RLI).
+        contexto.set_total(
+            "Ingresos.TotalIngresos", resultado_ingresos.totales.fila_7_total
+        )
+        contexto.set_total(
+            "Ingresos.TotalVentasYServicios", resultado_ingresos.totales.fila_7_12
+        )
 
-        # --- Modulo 2: Egresos (TODO - descomentar al implementar) ---
-        # from app.services.egresos import EgresosService
-        # digitados_egresos = (
-        #     request.digitados.egresos or CamposDigitadosEgresos()
+        # --- Modulo 2: Egresos (Pagina 2 - TODO) ---
+        # resultado_egresos = EgresosService().calcular(
+        #     vectores=request.vectores,
+        #     externos=request.externos,
+        #     digitados=request.digitados.egresos,
+        #     mostrar_formulas=mostrar_formulas,
         # )
-        # resultado_egresos = EgresosService().calcular(...)
+        # contexto.set_total("Egresos.TotalEgresos", ...)
 
-        # --- Modulo 3: Retiros (TODO) ---
+        # --- Modulo 3: Retiros (Pagina 3 - TODO) ---
+        # --- Modulo 4: Determinacion RLI (Pagina 4 - TODO) ---
+        #   Depende de Ingresos y Egresos: lee contexto.get_total(...).
+        # --- Modulo 5: Base Imponible (Pagina 5 - TODO) ---
+        # --- Modulo 6: Capital Propio Tributario (Pagina 6 - TODO) ---
+        # --- Modulo 7: Registro Renta Empresarial RRE (Pagina 7 - TODO) ---
+        # --- Modulo 8: Confirmacion de resultados (Pagina 8 - TODO) ---
 
-        # --- Modulo 4: Determinacion RLI (TODO - depende de Ingresos y Egresos) ---
-
-        # --- Modulo 5: Recuadro 17 F22 (TODO) ---
-
-        # TODO: Descomentar sub-nodos al implementar cada pagina, ej:
-        # egresos=resultado_egresos,
-        # retiros=resultado_retiros,
-        # rli=resultado_rli,
-        # recuadro_17=resultado_recuadro_17,
+        # TODO: descomentar sub-nodos al implementar cada pagina.
         return SimuladorGlobalResponse(
             ingresos=resultado_ingresos,
         )

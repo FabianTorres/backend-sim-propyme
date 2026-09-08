@@ -1,8 +1,8 @@
 """Schemas del Orquestador Global del Simulador Propyme.
 
-Define los contratos de entrada/salida unificados. Cada pagina (Ingresos,
-Egresos, Retiros, etc.) aporta sus schemas especificos y el orquestador los
-compone en un solo request/response global.
+Define los contratos de entrada/salida unificados. Los vectores (Vx...) y las
+variables externas (Calc...) son globales y planos; los digitados se agrupan
+por pagina. El orquestador compone todo en un solo request/response global.
 
 El Frontend envia un solo JSON y recibe un solo JSON con todos los modulos
 calculados. Esto permite dependencias cruzadas (ej. RLI depende de Ingresos y
@@ -11,16 +11,8 @@ Egresos) sin que el Frontend tenga que orquestar nada.
 
 from pydantic import BaseModel, Field
 
-# TODO: Al agregar nueva pagina, importar sus schemas aqui, ej:
-# from app.schemas.egresos import CamposDigitadosEgresos, EgresosResponse
-# from app.schemas.egresos import VectoresEgresos, ExternosEgresos
-
-from app.schemas.ingresos import (
-    CamposDigitados,
-    ExternosIngresos,
-    IngresosResponse,
-    VectoresIngresos,
-)
+from app.schemas.globales import Externos, Vectores
+from app.schemas.ingresos import CamposDigitados, IngresosResponse
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +25,7 @@ class DigitadosGlobal(BaseModel):
     Si una pagina aun no se ha implementado, su nodo es None.
     """
 
-    # TODO: Al agregar nueva pagina, descomentar/agregar su nodo aqui, ej:
+    # TODO: Al agregar nueva pagina, agregar su nodo aqui, ej:
     # egresos: CamposDigitadosEgresos | None = Field(default=None)
     ingresos: CamposDigitados | None = Field(default=None)
 
@@ -51,11 +43,10 @@ class SimuladorGlobalRequest(BaseModel):
 
     at: str = Field(default="2025", description="Anio tributario")
     mostrar_formulas: bool = Field(default=False, description="Activa el Modo Auditoria con desglose de formulas")
-    # TODO: Al agregar nueva pagina, los vectores/externos se vuelven uniones, ej:
-    # vectores: VectoresIngresos | VectoresEgresos
-    # O se crea un VectoresGlobales que contenga ambos sub-nodos.
-    vectores: VectoresIngresos = Field(default_factory=VectoresIngresos)
-    externos: ExternosIngresos = Field(default_factory=ExternosIngresos)
+    # Vectores y externos globales: cada pagina consume el subconjunto que usa.
+    vectores: Vectores = Field(default_factory=Vectores)
+    externos: Externos = Field(default_factory=Externos)
+    # Flag global CDEICalc (se detona en Ingresos, impacta en RLI/Retiros).
     patrimonio_personal: bool | None = Field(default=None)
     digitados: DigitadosGlobal = Field(default_factory=DigitadosGlobal)
 
@@ -70,6 +61,6 @@ class SimuladorGlobalResponse(BaseModel):
     Las paginas aun no implementadas aparecen como None.
     """
 
-    # TODO: Al agregar nueva pagina, descomentar/agregar su nodo aqui, ej:
+    # TODO: Al agregar nueva pagina, agregar su nodo aqui, ej:
     # egresos: EgresosResponse | None = Field(default=None)
     ingresos: IngresosResponse | None = Field(default=None)

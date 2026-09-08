@@ -11,7 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from app.schemas.ingresos import CamposDigitados, ExternosIngresos, VectoresIngresos
+from app.schemas.globales import Externos, Vectores
+from app.schemas.ingresos import CamposDigitados
 from app.schemas.orquestador import SimuladorGlobalRequest
 
 MOCK_PATH = Path(__file__).resolve().parent.parent / "app" / "db" / "mocks" / "mock_simulador_global.json"
@@ -33,7 +34,7 @@ def mock_global_request(mock_payload: dict) -> SimuladorGlobalRequest:
 @pytest.fixture
 def datos_ingresos(
     mock_global_request: SimuladorGlobalRequest,
-) -> tuple[VectoresIngresos, ExternosIngresos, CamposDigitados]:
+) -> tuple[Vectores, Externos, CamposDigitados]:
     """Extrae los datos especificos del modulo Ingresos desde el request global.
 
     Retorna (vectores, externos, digitados) listos para pasar a IngresosService.

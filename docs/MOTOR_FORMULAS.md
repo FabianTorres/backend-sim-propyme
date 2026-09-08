@@ -290,7 +290,7 @@ QA saber exactamente de dónde proviene cada número.
 ### 5.3 Patrón Override (Reemplazo Manual)
 
 ```python
-from app.services.ingresos import _con_override
+from app.services._helpers import _con_override
 
 "7.14": _con_override(
     digitado=Var("Ingresos 7.14B", origen="digitado"),
@@ -381,7 +381,7 @@ valor, literal, evaluado, variables_usadas, pasos.
 |---|---|
 | Codigo del motor | app/core/motor_formulas.py |
 | Servicio migrado | app/services/ingresos.py |
-| Schemas de salida | app/schemas/ingresos.py -> InspectorFormula, VariableInfo, FilaIngreso.inspectores |
+| Schemas de salida | app/schemas/comunes.py (InspectorFormula, VariableInfo) + app/schemas/ingresos.py (FilaIngreso.inspectores) |
 | Schema del request | app/schemas/orquestador.py -> SimuladorGlobalRequest.mostrar_formulas |
 | Tests Golden Master | tests/test_ingresos.py |
 | Tests de auditoria | tests/test_auditor.py |

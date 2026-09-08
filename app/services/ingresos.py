@@ -10,22 +10,19 @@ from app.core.motor_formulas import (
     MaxD,
     Nodo,
     Pos,
-    ReemplazoManual,
-    ResultadoNodo,
     Si,
     Var,
 )
+from app.schemas.comunes import InspectorFormula
+from app.schemas.globales import Externos, Vectores
 from app.schemas.ingresos import (
     AvisosIngresos,
     CamposDigitados,
-    ExternosIngresos,
     FilaIngreso,
     IngresosResponse,
-    InspectorFormula,
     TotalizadoresIngresos,
-    VariableInfo,
-    VectoresIngresos,
 )
+from app.services._helpers import _a_inspector, _con_override
 from app.utils.matematicas import CERO
 
 
@@ -65,8 +62,8 @@ class IngresosService:
 
     def calcular(
         self,
-        vectores: VectoresIngresos,
-        externos: ExternosIngresos,
+        vectores: Vectores,
+        externos: Externos,
         digitados: CamposDigitados,
         mostrar_formulas: bool = False,
     ) -> IngresosResponse:
@@ -696,31 +693,3 @@ class IngresosService:
             valor1_pcalc=valor1,
             valor2_pcalc=valor2,
         )
-
-
-# ------------------------------------------------------------------
-# Helpers a nivel modulo
-# ------------------------------------------------------------------
-
-
-def _con_override(digitado: Nodo, formula: Nodo) -> Nodo:
-    """Override: si el contribuyente ingreso un valor (>0), se usa; sino la formula."""
-    return ReemplazoManual(digitado, formula)
-
-
-def _a_inspector(r: ResultadoNodo) -> InspectorFormula:
-    """Convierte un ResultadoNodo en InspectorFormula (schema Pydantic)."""
-    return InspectorFormula(
-        valor=r.valor,
-        literal=r.literal,
-        evaluado=r.evaluado,
-        variables_usadas=[
-            VariableInfo(
-                nombre=v["nombre"],
-                valor=v["valor"],
-                origen=v["origen"],
-            )
-            for v in r.variables_usadas
-        ],
-        pasos=list(r.pasos),
-    )

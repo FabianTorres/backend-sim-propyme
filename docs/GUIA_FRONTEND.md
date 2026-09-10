@@ -20,6 +20,9 @@
    `float`) para no perder precision en valores monetarios.
 5. **El frontend NO calcula nada.** Solo envia entradas y recibe resultados.
    Todo calculo (y su trazabilidad) lo hace el backend.
+6. **Los resultados llegan redondeados a cero decimales.** El backend redondea
+   los resultados (redondeo normal: >=0.5 sube). No veras decimales en los
+   montos de salida.
 
 ## 2. Request (`SimuladorGlobalRequest`)
 
@@ -45,6 +48,13 @@
       "factura_renta_presunta": { "7.1": 0 },
       "ingresos_ano": { "7.11": 150000 },
       "ingresos_adeudados_at_anterior": { "7.1": 50000 }
+    },
+    "egresos": {
+      "no_pagadas": { "8.4": 0 },
+      "no_considerar_patrimonio": {},
+      "factura_renta_presunta": {},
+      "egresos_ano": {},
+      "egresos_adeudados_at_anterior": {}
     }
   }
 }
@@ -56,13 +66,13 @@
 | `mostrar_formulas` | bool | `true` = Modo Auditoria (desglose de formulas). |
 | `patrimonio_personal` | bool \| null | Flag global CDEI. Se detona en Ingresos, impacta en RLI/Retiros. |
 | `vectores` | objeto plano | `Vx...` -> numero. Solo envia los que apliquen al caso. |
-| `externos` | objeto plano | `Calc...` y atributos (hoy `Calc4064`, `Calc4075`, `CRRP`). |
+| `externos` | objeto plano | `Calc...` y atributos (`Calc4064`, `Calc4075`, `Calc4066`, `CRRP`). |
 | `digitados.<pagina>` | objeto | Campos editados por el usuario, agrupados por pagina. |
 
 - En `vectores`/`externos` puedes enviar codigos adicionales: el backend los
   ignora (`extra="ignore"`) hasta que los necesite. Es forward-compatible.
-- Hoy solo existe `digitados.ingresos`. Las proximas paginas agregaran
-  `digitados.egresos`, `digitados.retiros`, etc.
+- Hoy existen `digitados.ingresos` y `digitados.egresos`. Las proximas paginas
+  agregaran `digitados.retiros`, `digitados.rli`, etc.
 
 ## 3. Response (`SimuladorGlobalResponse`)
 
@@ -99,8 +109,9 @@
 }
 ```
 
-- La respuesta es un solo JSON con un sub-nodo por modulo. Hoy solo `ingresos`
-  esta poblado; las demas paginas llegaran como `null` hasta implementarse.
+- La respuesta es un solo JSON con un sub-nodo por modulo. Hoy `ingresos` y
+  `egresos` estan poblados; las demas paginas llegaran como `null` hasta
+  implementarse.
 - Cada fila de `filas` trae las columnas calculadas:
   - `ingresos_ano` (Col. B), `ingresos_adeudados_at_anterior` (Col. H),
     `monto_no_percibido` (Col. C), `no_considerar_patrimonio` (Col. D),
@@ -108,6 +119,12 @@
   - Los campos que no aplican a una fila vienen en `null`.
 - `avisos` trae flags de visibilidad y mensajes para renderizar la UI
   (ej. `mostrar_columna_patrimonio`, `valor1_pcalc`, `valor2_pcalc`).
+- El nodo `egresos` sigue el mismo patron, con sus propios campos por fila:
+  `egresos_ano` (Col. B), `egresos_adeudados_at_anterior` (Col. H),
+  `no_pagadas` (Col. C), `no_considerar_patrimonio` (Col. D),
+  `factura_renta_presunta` (Col. E), `monto_egresos_pagados` (Col. F);
+  `totales.fila_8_total`; y `avisos` con `aviso_arriendos_pagados`,
+  `mostrar_columna_patrimonio`, `mostrar_columna_renta_presunta`.
 
 ## 4. Modo Auditoria (`mostrar_formulas: true`)
 

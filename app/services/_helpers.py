@@ -8,6 +8,7 @@ patron de override manual.
 
 from app.core.motor_formulas import Nodo, ReemplazoManual, ResultadoNodo
 from app.schemas.comunes import InspectorFormula, VariableInfo
+from app.utils.matematicas import redondear_monto
 
 
 def _con_override(digitado: Nodo, formula: Nodo) -> Nodo:
@@ -41,3 +42,23 @@ def clave_celda(modulo: str, fila: str, col: str) -> str:
     del inspector sean legibles y consistentes para QA y contadores.
     """
     return f"{modulo} {fila}{col}"
+
+
+def _con_valor_redondeado(r: ResultadoNodo) -> ResultadoNodo:
+    """Copia un ResultadoNodo redondeando su resultado a cero decimales.
+
+    Se aplica sobre RESULTADOS calculados para eliminar decimales (ej. el
+    reajuste P77+P179). Los insumos no se redondean. Si el valor cambia, se
+    agrega un paso de auditoria explicito.
+    """
+    valor = redondear_monto(r.valor)
+    pasos = list(r.pasos)
+    if valor != r.valor:
+        pasos.append(f"Redondeo a pesos: {r.valor} -> {valor}")
+    return ResultadoNodo(
+        valor=valor,
+        literal=r.literal,
+        evaluado=r.evaluado,
+        variables_usadas=list(r.variables_usadas),
+        pasos=pasos,
+    )

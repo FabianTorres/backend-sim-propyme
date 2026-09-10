@@ -40,6 +40,7 @@
   - Aviso `aviso_arriendos_pagados`, totalizador `fila_8_total` (incluye 8.12).
   - Nueva capa de parametros (`app/core/parametros.py` + `parametros_2025.json`).
   - Externo nuevo `Calc4066` agregado a `Externos`.
+  - Redondeo de resultados a cero decimales (`redondear_monto`, redondeo normal >=0.5).
 - [ ] **Pagina 3: Retiros**
 - [ ] **Pagina 4: Determinacion RLI** (depende de Ingresos y Egresos)
 - [ ] **Pagina 5: Base Imponible**
@@ -66,3 +67,10 @@
   completo. Si no se envian, Pydantic los inicializa en 0.
 * **Totalizadores:** todo totalizador general de una tabla (ej. Fila 7 en
   Ingresos) suma la columna correcta segun reglas SII (Col. F), nunca la Col. B.
+* **Redondeo de resultados (regla):** los RESULTADOS calculados se redondean a
+  cero decimales con `redondear_monto` (redondeo normal >=0.5 sube). Los
+  insumos no se redondean. Ver `app/utils/matematicas.py`.
+* **Bug del SII (trunca en vez de redondear):** la web del SII trunca los
+  valores reajustados (ej. Egresos 8.4 con reajuste P77+P179) en vez de
+  redondear, generando diferencias de centavos/pesos. Los QA lo reportaron.
+  Nuestro backend aplica redondeo normal (correcto).

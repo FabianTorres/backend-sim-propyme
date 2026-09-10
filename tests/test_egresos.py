@@ -91,3 +91,14 @@ def test_reajuste_vx014022():
     # MAX(100000, 0) * (0.19 + 1) = 119000
     assert fila.egresos_ano == Decimal("119000")
     assert response.avisos.aviso_arriendos_pagados is True
+
+
+def test_redondeo_reajuste_decimales():
+    v, e, d, p = _datos()
+    v.Vx014022 = 1
+    v.Vx012214 = Decimal("328421")
+    response = EgresosService().calcular(v, e, d, parametros=p)
+    fila = _fila(response, "8.4")
+    # 328421 * 1.19 = 390820.99 -> redondeo normal (>=0.5) => 390821
+    assert fila.egresos_ano == Decimal("390821")
+    assert fila.monto_egresos_pagados == Decimal("390821")

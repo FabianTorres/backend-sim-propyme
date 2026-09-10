@@ -5,7 +5,7 @@ el resto de paginas. Centralizarlas evita duplicacion y acoplamiento cruzado
 entre servicios (ej. Egresos importando de Ingresos).
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 CERO = Decimal("0")
 
@@ -25,3 +25,13 @@ def max_d(a: Decimal, b: Decimal) -> Decimal:
     Util en formulas del SII del tipo MAX(Vx012188; Vx013384+...).
     """
     return a if a > b else b
+
+
+def redondear_monto(valor: Decimal) -> Decimal:
+    """Redondea un monto a cero decimales (redondeo normal: >= 0.5 sube).
+
+    Se aplica sobre RESULTADOS calculados para eliminar los decimales que
+    aparecen, por ejemplo, al aplicar el reajuste (P77+P179). Los insumos
+    (vectores, externos, digitados) no se redondean.
+    """
+    return valor.quantize(Decimal("1"), rounding=ROUND_HALF_UP)

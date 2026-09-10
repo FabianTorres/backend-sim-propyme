@@ -3,12 +3,13 @@
 - Arquitectura: Clean Architecture en FastAPI con Patrón de Orquestador Global.
 - Tipos de datos: Utiliza Pydantic v2 y tipado estricto (type hints).
 - Precisión numérica: Para valores monetarios o cálculos tributarios, usa `Decimal` o `int`, evitando `float` para prevenir errores de redondeo. Importa `CERO` y `POS` desde `app.utils.matematicas`.
+- Redondeo de resultados: los RESULTADOS calculados se redondean a cero decimales con `redondear_monto` (redondeo normal >=0.5 sube). Los insumos (vectores, externos, digitados, parametros) NO se redondean.
 - Estructura y Flujo:
   - `app/schemas/`: Modelos Pydantic. Reutiliza validadores de `_helpers.py`. TODO esquema nuevo debe integrarse al `SimuladorGlobalRequest` en `orquestador.py`.
   - `app/services/`: Lógica pura de cálculo. No crees endpoints nuevos por página; todo servicio es llamado desde `OrquestadorService`.
   - `tests/`: Pruebas unitarias con pytest. Usa los fixtures de `conftest.py`.
 - Regla Crítica (Stateless y Override): El backend es un oráculo sin memoria. El frontend envía SIEMPRE la historia completa en el bloque `vectores` y las ediciones manuales en el bloque `digitados.<modulo>`. En la lógica, prioriza SIEMPRE el valor digitado sobre el vector/fórmula usando `d.campo.get("codigo", formula)`.
 - Metodología: TDD (Test-Driven Development). Escribe primero el test y luego la lógica.
-- Contexto: Lee el documento `docs/ESTADO_PROYECTO.md` al iniciar la sesión para saber dónde estamos. Actualízalo de forma concisa al terminar una tarea importante.
+- Contexto: Lee `AGENTS.md` (raiz del repo) al iniciar la sesion. Contiene el proposito, reglas estrictas, convenciones, mapa de docs y estado. Actualiza `docs/ESTADO_PROYECTO.md` de forma concisa al terminar una tarea importante.
 - Reglas de Negocio: Revisa los `docs/Pagina_X...md` al implementar un módulo. Si hay contradicciones, avísalo.
 - Comentarios: Útiles, en español sin caracteres especiales (ej. "año" -> "ano"), en forma impersonal ("Se implementó..." no "Implementé...").

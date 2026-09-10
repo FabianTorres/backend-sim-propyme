@@ -23,7 +23,7 @@ from app.schemas.egresos import (
     TotalizadoresEgresos,
 )
 from app.schemas.globales import Externos, Vectores
-from app.services._helpers import _a_inspector, _con_override
+from app.services._helpers import _a_inspector, _con_override, _con_valor_redondeado
 from app.utils.matematicas import CERO
 
 
@@ -120,7 +120,7 @@ class EgresosService:
                 Var(f"Egresos {fila}H (Modificado)", origen="digitado"),
                 Var(vec_key, origen="vector"),
             )
-            resultado_h = arbol_h.resolver(contexto)
+            resultado_h = _con_valor_redondeado(arbol_h.resolver(contexto))
             h_valores[fila] = resultado_h.valor
             contexto[f"Egresos {fila}H"] = resultado_h.valor
             if mostrar_formulas:
@@ -133,7 +133,7 @@ class EgresosService:
         b_valores: dict[str, Decimal] = {}
         b_inspectores: dict[str, InspectorFormula] = {}
         for codigo, arbol in arboles_b.items():
-            resultado = arbol.resolver(contexto)
+            resultado = _con_valor_redondeado(arbol.resolver(contexto))
             b_valores[codigo] = resultado.valor
             contexto[f"Egresos {codigo}B"] = resultado.valor
             if mostrar_formulas:
@@ -144,7 +144,7 @@ class EgresosService:
         f_inspectores: dict[str, InspectorFormula] = {}
         for codigo in self._filas_con_f():
             arbol_f = self._arbol_f(codigo, h_valores)
-            resultado = arbol_f.resolver(contexto)
+            resultado = _con_valor_redondeado(arbol_f.resolver(contexto))
             f_valores[codigo] = resultado.valor
             contexto[f"Egresos {codigo}F"] = resultado.valor
             if mostrar_formulas:

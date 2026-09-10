@@ -11,6 +11,7 @@ Egresos) sin que el Frontend tenga que orquestar nada.
 
 from pydantic import BaseModel, Field
 
+from app.schemas.egresos import CamposDigitadosEgresos, EgresosResponse
 from app.schemas.globales import Externos, Vectores
 from app.schemas.ingresos import CamposDigitados, IngresosResponse
 
@@ -25,9 +26,8 @@ class DigitadosGlobal(BaseModel):
     Si una pagina aun no se ha implementado, su nodo es None.
     """
 
-    # TODO: Al agregar nueva pagina, agregar su nodo aqui, ej:
-    # egresos: CamposDigitadosEgresos | None = Field(default=None)
     ingresos: CamposDigitados | None = Field(default=None)
+    egresos: CamposDigitadosEgresos | None = Field(default=None)
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +61,5 @@ class SimuladorGlobalResponse(BaseModel):
     Las paginas aun no implementadas aparecen como None.
     """
 
-    # TODO: Al agregar nueva pagina, agregar su nodo aqui, ej:
-    # egresos: EgresosResponse | None = Field(default=None)
     ingresos: IngresosResponse | None = Field(default=None)
+    egresos: EgresosResponse | None = Field(default=None)

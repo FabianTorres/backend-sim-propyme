@@ -21,6 +21,8 @@
 * Helpers compartidos: `app/services/_helpers.py` (`_a_inspector`,
   `_con_override`, `clave_celda`).
 * Contexto entre paginas: `app/services/contexto.py` (`ContextoSimulacion`).
+* Parametros (Pxxx): `app/core/parametros.py` carga `parametros_<at>.json` desde
+  `app/db/mocks/` (repositorio simple). Ej. P77/P179 usados por Egresos.
 
 ## Progreso de Modulos (Paginas) - 8 en total
 - [x] **Pagina 1: Ingresos**
@@ -32,7 +34,12 @@
   - `_a_inspector`/`_con_override`/`clave_celda` extraidos a `app/services/_helpers.py`.
   - Creado `app/services/contexto.py` con `ContextoSimulacion` (totales cruzados).
   - Orquestador inyecta `patrimonio_personal` y guarda totales de Ingresos.
-- [ ] **Pagina 2: Egresos**
+- [x] **Pagina 2: Egresos**
+  - Schemas (`egresos.py`) y servicio `EgresosService` con arboles de expresiones.
+  - Condicional Vx014022 (reajuste P77+P179), override en filas editables, fila 8.31 (suma de H).
+  - Aviso `aviso_arriendos_pagados`, totalizador `fila_8_total` (incluye 8.12).
+  - Nueva capa de parametros (`app/core/parametros.py` + `parametros_2025.json`).
+  - Externo nuevo `Calc4066` agregado a `Externos`.
 - [ ] **Pagina 3: Retiros**
 - [ ] **Pagina 4: Determinacion RLI** (depende de Ingresos y Egresos)
 - [ ] **Pagina 5: Base Imponible**

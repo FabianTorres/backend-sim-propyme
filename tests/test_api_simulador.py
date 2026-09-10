@@ -23,6 +23,11 @@ def test_endpoint_simulador_ok(mock_payload):
     ingresos = body["ingresos"]
     totales = ingresos["totales"]
 
+    # El modulo egresos ya esta implementado y viene poblado
+    egresos = body["egresos"]
+    assert egresos is not None
+    assert "totales" in egresos
+
     # El schema serializa Decimal como string dentro del JSON
     assert totales["fila_7_12"] == "4080000"
     assert Decimal(totales["fila_7_12"]) == Decimal("4080000")

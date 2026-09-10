@@ -12,12 +12,15 @@ El Orquestador:
     4. Consolida los resultados en SimuladorGlobalResponse.
 """
 
+from app.core.parametros import cargar_parametros
+from app.schemas.egresos import CamposDigitadosEgresos
 from app.schemas.ingresos import CamposDigitados
 from app.schemas.orquestador import (
     SimuladorGlobalRequest,
     SimuladorGlobalResponse,
 )
 from app.services.contexto import ContextoSimulacion
+from app.services.egresos import EgresosService
 from app.services.ingresos import IngresosService
 
 
@@ -51,14 +54,19 @@ class OrquestadorService:
             "Ingresos.TotalVentasYServicios", resultado_ingresos.totales.fila_7_12
         )
 
-        # --- Modulo 2: Egresos (Pagina 2 - TODO) ---
-        # resultado_egresos = EgresosService().calcular(
-        #     vectores=request.vectores,
-        #     externos=request.externos,
-        #     digitados=request.digitados.egresos,
-        #     mostrar_formulas=mostrar_formulas,
-        # )
-        # contexto.set_total("Egresos.TotalEgresos", ...)
+        # --- Modulo 2: Egresos (Pagina 2) ---
+        parametros = cargar_parametros(request.at)
+        digitados_egresos = request.digitados.egresos or CamposDigitadosEgresos()
+        resultado_egresos = EgresosService().calcular(
+            vectores=request.vectores,
+            externos=request.externos,
+            digitados=digitados_egresos,
+            parametros=parametros,
+            mostrar_formulas=mostrar_formulas,
+        )
+        contexto.set_total(
+            "Egresos.TotalEgresos", resultado_egresos.totales.fila_8_total
+        )
 
         # --- Modulo 3: Retiros (Pagina 3 - TODO) ---
         # --- Modulo 4: Determinacion RLI (Pagina 4 - TODO) ---
@@ -71,4 +79,5 @@ class OrquestadorService:
         # TODO: descomentar sub-nodos al implementar cada pagina.
         return SimuladorGlobalResponse(
             ingresos=resultado_ingresos,
+            egresos=resultado_egresos,
         )

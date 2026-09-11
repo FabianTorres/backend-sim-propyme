@@ -283,6 +283,14 @@ class Vectores(BaseModel):
     Vx010241: Decimal = Field(default=Decimal("0"))
     Vx012831: Decimal = Field(default=Decimal("0"))
 
+    # --- Retiros (Pagina 3) ---
+    Vx010599: int = Field(default=0)  # calificacion que habilita RET3 (acciones)
+    Vx014301: Decimal = Field(default=Decimal("0"))
+    Vx012951: Decimal = Field(default=Decimal("0"))
+    Vx014661: Decimal = Field(default=Decimal("0"))
+    Vx014662: Decimal = Field(default=Decimal("0"))
+    Vx014663: Decimal = Field(default=Decimal("0"))
+
     @field_validator("*", mode="before")
     @classmethod
     def _normalizar(cls, value):

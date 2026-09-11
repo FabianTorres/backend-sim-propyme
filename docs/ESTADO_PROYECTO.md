@@ -41,7 +41,20 @@
   - Nueva capa de parametros (`app/core/parametros.py` + `parametros_2025.json`).
   - Externo nuevo `Calc4066` agregado a `Externos`.
   - Redondeo de resultados a cero decimales (`redondear_monto`, redondeo normal >=0.5).
-- [ ] **Pagina 3: Retiros**
+- [x] **Pagina 3: Retiros**
+  - Schemas `app/schemas/retiros.py` y `app/schemas/rre.py`; servicio `RetirosService`.
+  - Pagina casi de solo ingreso: calcula `[1044]`/`[1045]` (usando las variables
+    `H2..I17` del RRE), las derivadas `1040..1052`, los totales `RET30/RET14/RET15`
+    y las habilitaciones/validaciones.
+  - Vectores nuevos en `globales.py`: `Vx014301`, `Vx012951`, `Vx014661/4662/4663`,
+    `Vx010599`. Los centinelas `900000000000000` no se normalizan (se usan tal cual).
+  - Flujo no lineal: `H2..I17` viajan en `digitados.rre` (no en `digitados.retiros`).
+  - Modo Auditoria: `inspectores` con claves `1044`, `1045`, `ret30`, `ret15`,
+    `ret14.<rut>`, `validacion_1044/1045` y `fila<i>_validacion_f1/f2`.
+  - Validacion por fila (backend): `RET5>=RET6+RET7` y `RET10>=RET11+RET12`
+    (flags `validacion_f1`/`validacion_f2` por fila).
+  - Todos los calculos usan el motor de formulas (arboles); sin operadores nativos.
+  - Nota: la web NO muestra valores calculados en Retiros (se usan para RRE).
 - [ ] **Pagina 4: Determinacion RLI** (depende de Ingresos y Egresos)
 - [ ] **Pagina 5: Base Imponible**
 - [ ] **Pagina 6: Capital Propio Tributario**
@@ -60,6 +73,19 @@
   desde `app/services/_helpers.py`).
 * El flujo entre paginas se hace con `ContextoSimulacion` (claves `<Modulo>.<Concepto>`).
 * Modo Auditoria: las 8 paginas exponen `inspectores` ("Caja de Cristal").
+
+## Contexto de datos (RIAC) y flujos no lineales (ver AGENTS.md seccion 12)
+* El asistente real del SII obtiene TODO del RIAC (vectores, calcs, atributos,
+  socios). Nuestro backend NO accede al RIAC: el frontend envia el equivalente
+  via un Excel convertido a `vectores`/`externos`/`digitados`.
+* La lista de socios no llega del RIAC hacia nosotros: el analista QA la ingresa
+  a mano en el formulario y usa "Recalcular".
+* Retiros es una pagina de flujo no lineal: `H2, H3, H6, H7, I4, I17` vienen del
+  RRE (Pagina 7) y se reciben como digitados dentro del request.
+* **Reglas de UI vs simulador:** las habilitaciones/bloqueos de columnas del SII
+  (ej. Retiros: filas RIAC vs nuevas) son del SII real y se certifican contra la
+  web real. En el simulador/frontend **todas las celdas son editables** (es una
+  maqueta de ingreso de datos; el analista digita lo que el caso necesite).
 
 ## Advertencias y Casos Extremos Conocidos (Edge Cases)
 * **Amnesia de Vectores en UI:** la API es Stateless. Si el usuario edita un

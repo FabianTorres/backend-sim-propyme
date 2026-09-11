@@ -25,7 +25,7 @@ todos los resultados calculados en un solo JSON.
 ## Estado (8 paginas)
 - [x] 1. Ingresos
 - [x] 2. Egresos
-- [ ] 3. Retiros
+- [x] 3. Retiros
 - [ ] 4. Determinacion RLI
 - [ ] 5. Base Imponible
 - [ ] 6. Capital Propio Tributario

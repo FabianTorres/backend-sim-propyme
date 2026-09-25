@@ -32,5 +32,8 @@ todos los resultados calculados en un solo JSON.
 - [ ] 7. Registro Renta Empresarial (RRE)
 - [ ] 8. Confirmacion de resultados
 
+## Ejecutar servidor (dev)
+ `python run.py`
+
 ## Correr tests
 `python -m pytest`

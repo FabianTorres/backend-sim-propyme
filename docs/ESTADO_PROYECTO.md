@@ -55,6 +55,15 @@
     (flags `validacion_f1`/`validacion_f2` por fila).
   - Todos los calculos usan el motor de formulas (arboles); sin operadores nativos.
   - Nota: la web NO muestra valores calculados en Retiros (se usan para RRE).
+  - Verificacion visual QA 2026-09-28 (RUT 69500400-1, script
+    `devtools/playwright_check/check_retiros_visual.py`, evidencia
+    `artefactos/11_retiros_check.html/.png`): estructura, bloqueos y mensajes
+    coinciden con `docs/Pagina_3_Retiros.md`; topes web
+    ISFUT_H $900.000.007.934.946 / ISFUT_A $900.000.006.962.488 identicos al
+    backend. Pendientes (no bugs del motor): el caso JSON trae digitados
+    sinteticos (la web fresh propone 0/fechas vacias, solo topes comparables);
+    el frontend NO debe enviar la fila template "Nuevo" con rut vacio (genera
+    derivadas y `ret14[""]` espurias); typo doc: `Vx04661...` es `Vx014661...`.
 - [ ] **Pagina 4: Determinacion RLI** (depende de Ingresos y Egresos)
 - [ ] **Pagina 5: Base Imponible**
 - [ ] **Pagina 6: Capital Propio Tributario**

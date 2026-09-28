@@ -51,6 +51,7 @@ Opcional: crear `.env` (copia de `.env.example`) para cambiar URL/RUT/clave.
 | `normalizar.py` | Normaliza montos a `Decimal` |
 | `reporte.py` | Reporte en consola y Markdown |
 | `casos/rut_69500400-1.json` | Payload del caso (vectores + externos + digitados) |
+| `check_retiros_visual.py` | Chequeo visual hasta Retiros: estructura web vs doc vs backend (genera `artefactos/11_retiros_check.*`) |
 
 Los archivos `probe_*.py`, `inspect_*.py` y `check_*.py` son scripts
 exploratorios usados para descubrir los selectores de la web QA.

@@ -23,6 +23,9 @@
 6. **Los resultados llegan redondeados a cero decimales.** El backend redondea
    los resultados (redondeo normal: >=0.5 sube). No veras decimales en los
    montos de salida.
+7. **En Retiros, omite las filas vacias.** No envies la fila template "Nuevo"
+   con `rut` vacio: genera derivadas y totales espurios. Envia solo filas con
+   RUT informado (una por socio + fecha).
 
 ## 2. Request (`SimuladorGlobalRequest`)
 

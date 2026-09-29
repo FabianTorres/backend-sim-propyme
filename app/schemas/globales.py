@@ -291,6 +291,31 @@ class Vectores(BaseModel):
     Vx014662: Decimal = Field(default=Decimal("0"))
     Vx014663: Decimal = Field(default=Decimal("0"))
 
+    # --- Determinacion RLI (Pagina 4): condicion incentivo al ahorro ---
+    Vx010146: Decimal = Field(default=Decimal("0"))
+    Vx011930: Decimal = Field(default=Decimal("0"))
+    Vx011931: Decimal = Field(default=Decimal("0"))
+    Vx012832: Decimal = Field(default=Decimal("0"))
+    Vx012833: Decimal = Field(default=Decimal("0"))
+    Vx012946: Decimal = Field(default=Decimal("0"))
+    Vx012947: Decimal = Field(default=Decimal("0"))
+    Vx012948: Decimal = Field(default=Decimal("0"))
+    Vx012949: Decimal = Field(default=Decimal("0"))
+    Vx012836: Decimal = Field(default=Decimal("0"))
+    Vx012837: Decimal = Field(default=Decimal("0"))
+    Vx013663: Decimal = Field(default=Decimal("0"))
+    Vx013664: Decimal = Field(default=Decimal("0"))
+    Vx013665: Decimal = Field(default=Decimal("0"))
+    Vx013666: Decimal = Field(default=Decimal("0"))
+    Vx013719: Decimal = Field(default=Decimal("0"))
+    Vx013720: Decimal = Field(default=Decimal("0"))
+    Vx013721: Decimal = Field(default=Decimal("0"))
+    Vx013722: Decimal = Field(default=Decimal("0"))
+    Vx010213: Decimal = Field(default=Decimal("0"))
+    # --- RLI 9.5: tope IDPC voluntario propuesto ---
+    Vx013013: Decimal = Field(default=Decimal("0"))
+    # Vx010089 y Vx012831 ya existen (se usan en Egresos/Ingresos).
+
     @field_validator("*", mode="before")
     @classmethod
     def _normalizar(cls, value):

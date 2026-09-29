@@ -76,6 +76,11 @@
   ignora (`extra="ignore"`) hasta que los necesite. Es forward-compatible.
 - Hoy existen `digitados.ingresos` y `digitados.egresos`. Las proximas paginas
   agregaran `digitados.retiros`, `digitados.rli`, etc.
+- RLI (`digitados.rli`): `{ "acoge_14e": true|false|null, "deduccion_14e": "0" }`.
+  `acoge_14e` es la respuesta al modal del incentivo al ahorro (`null` = aun
+  no responde: el backend devuelve `cuadro: "pendiente"` y
+  `mostrar_modal_14e: true`). `deduccion_14e` es el 9.4 editado (el backend lo
+  recorta a `[0, max94]`); si lo omites o es 0, se usa el maximo propuesto.
 
 ## 3. Response (`SimuladorGlobalResponse`)
 
@@ -128,6 +133,13 @@
   `factura_renta_presunta` (Col. E), `monto_egresos_pagados` (Col. F);
   `totales.fila_8_total`; y `avisos` con `aviso_arriendos_pagados`,
   `mostrar_columna_patrimonio`, `mostrar_columna_renta_presunta`.
+- El nodo `rli` trae los calculados `v9, v9_1, v9_2, v9_21, v9_3, max94, v9_4,
+  v9_5, v9_6, subtotal`, el `cuadro` a exhibir (`t1` con 14E, `t2` perdida,
+  `t3` sin 14E, `pendiente` si el modal sigue sin respuesta),
+  `mostrar_modal_14e`, `condicion_ok`, los `codigos` C1400/C1401/C1587/C1588/
+  C1817 usados en la condicion, y `avisos` de despliegue (`mostrar_9_1`,
+  `mostrar_9_2`, `mostrar_9_5`). El F22 1440 es `v9_6` en cualquier cuadro
+  (en Cuadro N°2 se rotula 9.7).
 
 ## 4. Modo Auditoria (`mostrar_formulas: true`)
 

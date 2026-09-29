@@ -158,6 +158,18 @@ Pos(Var("Vx010145","vector") - Var("Vx012210","vector"))
 # paso:    "POS(50000) = 50000"
 ```
 
+### 2.6b `MinD(izq, der)` y `Abs(operando)`
+
+`MIN(a, b)` del SII (ej. 9.4 y 9.5 de RLI) y `ABS(x)` (ej. 9.2 de RLI).
+Agregan pasos `MIN(a, b) = menor` y `ABS(x) = resultado`.
+
+```python
+MinD(Var("P02", "parametro") * Pos(Var("RLI 9.3", "calculado")), Var("P103", "parametro"))
+# paso: "MIN(500, 198639800) = 500"
+Abs(Var("RLI base", "calculado"))
+# paso: "ABS(-7000) = 7000"
+```
+
 ### 2.7 `Si(cond_fn, verdadero, falso, descripcion)`
 
 Condicional. Agrega paso `SI(cond) => valor` o `SI(NO cond) => valor`.

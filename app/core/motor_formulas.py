@@ -268,6 +268,48 @@ class Pos(Nodo):
         )
 
 
+class MinD(Nodo):
+    """MIN(a, b) - minimo entre dos sub-arboles."""
+
+    def __init__(self, izquierdo: Nodo, derecho: Nodo) -> None:
+        self.izq = izquierdo
+        self.der = derecho
+
+    def resolver(self, contexto: dict[str, Any]) -> ResultadoNodo:
+        ri = self.izq.resolver(contexto)
+        rd = self.der.resolver(contexto)
+        ganador = ri.valor if ri.valor < rd.valor else rd.valor
+        pasos = ri.pasos + rd.pasos
+        pasos.append(f"MIN({_fmt(ri.valor)}, {_fmt(rd.valor)}) = {_fmt(ganador)}")
+        return ResultadoNodo(
+            valor=ganador,
+            literal=f"MIN({ri.literal}, {rd.literal})",
+            evaluado=f"MIN({ri.evaluado}, {rd.evaluado})",
+            variables_usadas=_merge_vars(ri.variables_usadas, rd.variables_usadas),
+            pasos=pasos,
+        )
+
+
+class Abs(Nodo):
+    """ABS(x) - valor absoluto."""
+
+    def __init__(self, operando: Nodo) -> None:
+        self.operando = operando
+
+    def resolver(self, contexto: dict[str, Any]) -> ResultadoNodo:
+        ro = self.operando.resolver(contexto)
+        valor = -ro.valor if ro.valor < CERO else ro.valor
+        pasos = list(ro.pasos)
+        pasos.append(f"ABS({_fmt(ro.valor)}) = {_fmt(valor)}")
+        return ResultadoNodo(
+            valor=valor,
+            literal=f"ABS({ro.literal})",
+            evaluado=f"ABS({ro.evaluado})",
+            variables_usadas=list(ro.variables_usadas),
+            pasos=pasos,
+        )
+
+
 class Si(Nodo):
     """Condicional: SI(condicion, verdadero, falso).
 

@@ -20,11 +20,13 @@ from app.schemas.orquestador import (
     SimuladorGlobalResponse,
 )
 from app.schemas.retiros import CamposDigitadosRetiros
+from app.schemas.rli import CamposDigitadosRLI
 from app.schemas.rre import CamposDigitadosRRE
 from app.services.contexto import ContextoSimulacion
 from app.services.egresos import EgresosService
 from app.services.ingresos import IngresosService
 from app.services.retiros import RetirosService
+from app.services.rli import RLIService
 
 
 class OrquestadorService:
@@ -86,9 +88,25 @@ class OrquestadorService:
         contexto.set_total("Retiros.RET30", resultado_retiros.totales.ret30)
         contexto.set_total("Retiros.RET15", resultado_retiros.totales.ret15)
 
-        # --- Modulo 4: Determinacion RLI (Pagina 4 - TODO) ---
-        #   Depende de Ingresos y Egresos: lee contexto.get_total(...).
+        # --- Modulo 4: Determinacion RLI (Pagina 4) ---
+        # Consume las respuestas completas de Ingresos/Egresos (filas F para
+        # los C-codigos) y el RET30 de Retiros.
+        digitados_rli = request.digitados.rli or CamposDigitadosRLI()
+        resultado_rli = RLIService().calcular(
+            vectores=request.vectores,
+            ingresos=resultado_ingresos,
+            egresos=resultado_egresos,
+            ret30=resultado_retiros.totales.ret30,
+            digitados=digitados_rli,
+            parametros=parametros,
+            mostrar_formulas=mostrar_formulas,
+        )
+        contexto.set_total("RLI.9_4", resultado_rli.v9_4)
+        contexto.set_total("RLI.9_5", resultado_rli.v9_5)
+        contexto.set_total("RLI.9_6", resultado_rli.v9_6)
+
         # --- Modulo 5: Base Imponible (Pagina 5 - TODO) ---
+        #   Lee contexto.get_total("RLI.9_4/9_5/9_6").
         # --- Modulo 6: Capital Propio Tributario (Pagina 6 - TODO) ---
         # --- Modulo 7: Registro Renta Empresarial RRE (Pagina 7 - TODO) ---
         # --- Modulo 8: Confirmacion de resultados (Pagina 8 - TODO) ---
@@ -97,4 +115,5 @@ class OrquestadorService:
             ingresos=resultado_ingresos,
             egresos=resultado_egresos,
             retiros=resultado_retiros,
+            rli=resultado_rli,
         )

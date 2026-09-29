@@ -26,7 +26,7 @@ todos los resultados calculados en un solo JSON.
 - [x] 1. Ingresos
 - [x] 2. Egresos
 - [x] 3. Retiros
-- [ ] 4. Determinacion RLI
+- [x] 4. Determinacion RLI
 - [ ] 5. Base Imponible
 - [ ] 6. Capital Propio Tributario
 - [ ] 7. Registro Renta Empresarial (RRE)

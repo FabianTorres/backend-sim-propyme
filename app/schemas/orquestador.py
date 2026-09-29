@@ -15,6 +15,7 @@ from app.schemas.egresos import CamposDigitadosEgresos, EgresosResponse
 from app.schemas.globales import Externos, Vectores
 from app.schemas.ingresos import CamposDigitados, IngresosResponse
 from app.schemas.retiros import CamposDigitadosRetiros, RetirosResponse
+from app.schemas.rli import CamposDigitadosRLI, RLIResponse
 from app.schemas.rre import CamposDigitadosRRE
 
 
@@ -32,6 +33,7 @@ class DigitadosGlobal(BaseModel):
     egresos: CamposDigitadosEgresos | None = Field(default=None)
     retiros: CamposDigitadosRetiros | None = Field(default=None)
     rre: CamposDigitadosRRE | None = Field(default=None)
+    rli: CamposDigitadosRLI | None = Field(default=None)
 
 
 # ---------------------------------------------------------------------------
@@ -68,3 +70,4 @@ class SimuladorGlobalResponse(BaseModel):
     ingresos: IngresosResponse | None = Field(default=None)
     egresos: EgresosResponse | None = Field(default=None)
     retiros: RetirosResponse | None = Field(default=None)
+    rli: RLIResponse | None = Field(default=None)

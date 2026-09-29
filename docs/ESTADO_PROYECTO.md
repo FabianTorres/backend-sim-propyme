@@ -64,7 +64,20 @@
     sinteticos (la web fresh propone 0/fechas vacias, solo topes comparables);
     el frontend NO debe enviar la fila template "Nuevo" con rut vacio (genera
     derivadas y `ret14[""]` espurias); typo doc: `Vx04661...` es `Vx014661...`.
-- [ ] **Pagina 4: Determinacion RLI** (depende de Ingresos y Egresos)
+- [x] **Pagina 4: Determinacion RLI** (implementada 2026-09-29; pendiente chequeo
+  visual en QA)
+  - Schemas `app/schemas/rli.py`, servicio `RLIService`, cableado en
+    `OrquestadorService` (recibe respuestas de Ingresos/Egresos + RET30).
+  - Calcula 9/9.1/9.2/9.21/9.3, max94, 9.4 (override recortado a [0, max]),
+    9.5, 9.6, subtotal, condicion 14E y cuadro t1/t2/t3/pendiente + modal.
+  - Motor: nodos nuevos `MinD` y `Abs` (`tests/test_motor.py`).
+  - Vectores nuevos en `globales.py` (17 de la condicion + `Vx013013`) y
+    `parametros_2026.json` (P02=0.5, P22=0.2, P103=198639800).
+  - `RLI.9_4/9_5/9_6` quedan en el contexto para Base Imponible.
+  - Golden caso QA: 9.1=23063230, 9.3=8233330, max94=4116665, condicion falla
+    (37406180 > 9314941.4) -> cuadro t3, 9.5=1075360, 9.6=21987870.
+  - Precision del doc en `docs/Pagina_4_RLI.md` (seccion final); maxima de
+    discrepancias en AGENTS.md 5b.
 - [ ] **Pagina 5: Base Imponible**
 - [ ] **Pagina 6: Capital Propio Tributario**
 - [ ] **Pagina 7: Registro Renta Empresarial (RRE)**

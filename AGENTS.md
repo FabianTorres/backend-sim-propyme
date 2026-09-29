@@ -80,6 +80,17 @@ docs/         # documentacion de negocio y tecnica
 10. **No rompas lo que funciona**: si hay una contradiccion en la doc de negocio,
     AVISALO; no la resuelvas en silencio.
 
+## 5b. Maxima ante diferencias (original vs nosotros vs docs)
+
+Cuando la aplicacion original difiera de nuestro backend o de la documentacion,
+se analiza **caso por caso**. En principio se toma en cuenta lo observado en la
+aplicacion original, pero OJO: nunca se da por bueno lo original automaticamente
+ni por malo lo nuestro. El documento oficial de negocio es la base, y lo que
+puede estar malo es lo de ellos (ejemplo: ellos truncan valores reajustados,
+nosotros redondeamos >=0.5 y creemos tener la razon). Cada discrepancia se
+documenta indicando: que dice el doc, que hace la aplicacion original, que hace
+nuestro backend y cual se adopta (y por que).
+
 ## 6. Convenciones clave
 
 - **clave_celda**: las celdas del contexto se nombran `<Modulo> <fila><col>`

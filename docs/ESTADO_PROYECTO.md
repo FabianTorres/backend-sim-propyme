@@ -38,7 +38,7 @@
   - Schemas (`egresos.py`) y servicio `EgresosService` con arboles de expresiones.
   - Condicional Vx014022 (reajuste P77+P179), override en filas editables, fila 8.31 (suma de H).
   - Aviso `aviso_arriendos_pagados`, totalizador `fila_8_total` (incluye 8.12).
-  - Nueva capa de parametros (`app/core/parametros.py` + `parametros_2025.json`).
+  - Nueva capa de parametros (`app/core/parametros.py` + `parametros_2026.json`).
   - Externo nuevo `Calc4066` agregado a `Externos`.
   - Redondeo de resultados a cero decimales (`redondear_monto`, redondeo normal >=0.5).
 - [x] **Pagina 3: Retiros**
@@ -78,6 +78,9 @@
     (37406180 > 9314941.4) -> cuadro t3, 9.5=1075360, 9.6=21987870.
   - Precision del doc en `docs/Pagina_4_RLI.md` (seccion final); maxima de
     discrepancias en AGENTS.md 5b.
+  - Frontend: Pagina 4 implementada en `simulador-propyme-ui`
+    (`pages/determinacion-rli/`); ver `docs/Pagina_4_RLI_Implementacion.md` del
+    frontend. Pendiente validacion manual contra el backend.
 - [ ] **Pagina 5: Base Imponible**
 - [ ] **Pagina 6: Capital Propio Tributario**
 - [ ] **Pagina 7: Registro Renta Empresarial (RRE)**
@@ -122,3 +125,20 @@
   valores reajustados (ej. Egresos 8.4 con reajuste P77+P179) en vez de
   redondear, generando diferencias de centavos/pesos. Los QA lo reportaron.
   Nuestro backend aplica redondeo normal (correcto).
+## Devtools: verificacion web QA vs backend (devtools/playwright_check)
+* Herramienta ad-hoc (Playwright + Edge del sistema) que navega el Asistente
+  Propyme del SII QA y compara contra el backend. Cubre Ingresos, Egresos y
+  RLI (Pagina 4).
+* Flujo de inicio configurable: "Recuperar datos" o "Nueva informacion"
+  (`web_scraper.llegar_a_ingresos(modo=...)`) y avance hasta RLI (`ir_a_rli`).
+* Scripts: `runner.py` (Ingresos/Egresos), `runner_rli.py` (RLI: responde el
+  modal 14E en SI/NO, modos nueva/recuperar, flag `sinretiros`), `probe_rli.py`
+  (sonda) y `construir_caso.py` (arma un caso JSON desde un Excel del SII).
+* Caso vigente UNICO: `casos/rut_69500400-1.json`, reconstruido desde
+  `simulador-propyme-ui/docs/propuesta-2026-69500400-1_Original.xlsx`. Los
+  casos y Excel anteriores fueron BORRADOS (no coincidian con el ambiente QA).
+* Resultados (RUT 69500400-1, AT2026): Ingresos 69/69; Egresos 52/57 (las 5
+  diferencias son el bug del SII que trunca los reajustes 8.4/8.11 y el total
+  8); RLI 8/8 con tolerancia +/-2 (redondeo SII) en ambos modos. En QA los
+  socios de Retiros aparecen con montos en 0 -> RET30=0 (usar `sinretiros`).
+  Detalle en `devtools/playwright_check/README.md`.

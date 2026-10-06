@@ -7,7 +7,7 @@ Cada mock sigue el contrato `SimuladorGlobalRequest` definido en
 
 ```json
 {
-  "at": "2025",
+  "at": "2026",
   "patrimonio_personal": false,
   "vectores": { "Vx...": 0 },
   "externos": { "Calc...": 0 },

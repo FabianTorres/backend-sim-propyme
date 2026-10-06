@@ -31,7 +31,7 @@
 
 ```json
 {
-  "at": "2025",
+  "at": "2026",
   "mostrar_formulas": false,
   "patrimonio_personal": false,
   "vectores": {
@@ -65,7 +65,7 @@
 
 | Campo | Tipo | Notas |
 |---|---|---|
-| `at` | string | Anio tributario (default `"2025"`). |
+| `at` | string | Anio tributario (default `"2026"`). |
 | `mostrar_formulas` | bool | `true` = Modo Auditoria (desglose de formulas). |
 | `patrimonio_personal` | bool \| null | Flag global CDEI. Se detona en Ingresos, impacta en RLI/Retiros. |
 | `vectores` | objeto plano | `Vx...` -> numero. Solo envia los que apliquen al caso. |

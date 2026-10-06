@@ -171,7 +171,7 @@ def test_endpoint_rli_presente(mock_payload):
 
 
 def test_caso_qa_cuadro_3():
-    """Caso RUT 69500400-1 (AT2026): base 23063230, condicion falla -> t3."""
+    """Caso RUT 69500400-1 (AT2026, Excel Original): 9.1=65639530, condicion falla -> t3."""
     import json
     from pathlib import Path
 
@@ -182,13 +182,13 @@ def test_caso_qa_cuadro_3():
     req = SimuladorGlobalRequest.model_validate(json.loads(caso.read_text(encoding="utf-8")))
     rli = OrquestadorService().calcular_simulacion(req).rli
 
-    assert rli.v9_1 == Decimal("23063230")
+    assert rli.v9_1 == Decimal("65639530")
     assert rli.v9_2 == Decimal("0")
-    assert rli.v9_3 == Decimal("8233330")
-    assert rli.max94 == Decimal("4116665")
+    assert rli.v9_3 == Decimal("50809630")
+    assert rli.max94 == Decimal("25404815")
     assert rli.condicion_ok is False
     assert rli.mostrar_modal_14e is False
     assert rli.cuadro == "t3"
     assert rli.v9_4 == Decimal("0")
     assert rli.v9_5 == Decimal("1075360")
-    assert rli.v9_6 == Decimal("21987870")
+    assert rli.v9_6 == Decimal("64564170")

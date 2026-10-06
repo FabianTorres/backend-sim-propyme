@@ -1,11 +1,10 @@
-"""Navegacion del asistente propyme (QA) y extraccion de celdas de Ingresos/Egresos.
+﻿"""Navegacion del asistente propyme (QA) y extraccion de celdas.
 
 Flujo real (ambiente QA, datos ficticios):
 1. Seleccionar anio tributario 2026.
-2. Elegir 'Nueva informacion'.
+2. Elegir 'Recuperar datos' (o 'Nueva informacion').
 3. Home intermedio -> enlace 'Ir al Asistente'.
-4. Primera pantalla del asistente (Ingresos) con alertas informativas (aceptar).
-5. Para pasar a Egresos: boton 'Continuar'.
+4. Primeras pantallas del asistente (Ingresos, Egresos, Retiros, RLI).
 """
 from __future__ import annotations
 
@@ -46,6 +45,14 @@ def elegir_nueva_informacion(page: Page) -> None:
         page.wait_for_timeout(8000)
 
 
+def elegir_recuperar_datos(page: Page) -> None:
+    """En la pantalla de recuperar informacion, elige 'Recuperar datos'."""
+    loc = page.locator("button, a", has_text="Recuperar datos")
+    if loc.count():
+        loc.first.click()
+        page.wait_for_timeout(8000)
+
+
 def ir_al_asistente(page: Page) -> None:
     """Desde el Home, presiona el enlace 'Ir al Asistente'."""
     page.locator("a", has_text="Ir al Asistente").first.click()
@@ -61,7 +68,7 @@ def cerrar_modal_informativo(page: Page) -> None:
             if not modal.is_visible():
                 continue
             for texto in ("Cerrar", "Aceptar", "Entendido"):
-                boton = modal.locator(f"button, a", has_text=texto).first
+                boton = modal.locator("button, a", has_text=texto).first
                 if boton.count() and boton.is_visible():
                     boton.click()
                     page.wait_for_timeout(800)
@@ -76,13 +83,18 @@ def continuar(page: Page) -> None:
     page.wait_for_timeout(10000)
 
 
-def llegar_a_ingresos(page: Page) -> None:
-    """Ejecuta el flujo completo hasta la pantalla de Ingresos."""
+def llegar_a_ingresos(page: Page, modo: str = "nueva") -> None:
+    """Ejecuta el flujo completo hasta la pantalla de Ingresos.
+
+    modo: 'nueva' (por defecto) o 'recuperar' (usa datos guardados del RIAC).
+    """
     seleccionar_periodo(page)
-    elegir_nueva_informacion(page)
+    if modo == "recuperar":
+        elegir_recuperar_datos(page)
+    else:
+        elegir_nueva_informacion(page)
     ir_al_asistente(page)
     cerrar_modal_informativo(page)
-    # Si aterriza en la sub-pantalla de ingreso diferido (parte de Ingresos), avanzar.
     if "ingreso-diferido" in page.url:
         continuar(page)
         cerrar_modal_informativo(page)
@@ -97,6 +109,44 @@ def aceptar_alertas(page: Page, veces: int = 5) -> None:
             page.wait_for_timeout(900)
         else:
             break
+
+
+def ir_a_rli(page: Page, max_pasos: int = 5) -> None:
+    """Desde Egresos avanza (Continuar) hasta la pantalla de RLI.
+
+    Recorre Retiros y pantallas intermedias aceptando alertas/modales. Se
+    detiene cuando detecta la pantalla de RLI (url o titulo).
+    """
+    for _ in range(max_pasos):
+        aceptar_alertas(page)
+        cerrar_modal_informativo(page)
+        if _es_pantalla_rli(page):
+            return
+        try:
+            continuar(page)
+        except Exception:
+            return
+        aceptar_alertas(page)
+        cerrar_modal_informativo(page)
+        if _es_pantalla_rli(page):
+            return
+
+
+def _es_pantalla_rli(page: Page) -> bool:
+    """Heuristica: la pantalla RLI contiene 'Determinacion' y codigos 9.x."""
+    titulo = (page.title() or "").lower()
+    if "rli" in titulo or "14d1" in titulo and "retiro" not in titulo:
+        pass
+    body = ""
+    try:
+        body = (page.locator("body").inner_text() or "").lower()
+    except Exception:
+        return False
+    if "determinaci" in body and "renta l" in body:
+        return True
+    if "incentivo al ahorro" in body or "art. 14 e" in body or "14 e" in body:
+        return True
+    return False
 
 
 def _leer_valor_celda(fila, celda_idx: int) -> str:

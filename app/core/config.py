@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MOCKS_DIR = PROJECT_ROOT / "app" / "db" / "mocks"
 
 # Puerto por defecto del servidor
-DEFAULT_PORT = 8001
+DEFAULT_PORT = 8002
 
 # Ambiente actual (se lee de variable de entorno, fallback a 'development')
 # En produccion se setea APP_ENV=production

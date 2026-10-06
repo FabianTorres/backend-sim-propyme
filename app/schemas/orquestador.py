@@ -47,8 +47,10 @@ class SimuladorGlobalRequest(BaseModel):
     Los digitados van agrupados por pagina dentro de un sub-nodo.
     """
 
-    at: str = Field(default="2025", description="Anio tributario")
-    mostrar_formulas: bool = Field(default=False, description="Activa el Modo Auditoria con desglose de formulas")
+    at: str = Field(default="2026", description="Anio tributario")
+    mostrar_formulas: bool = Field(
+        default=False, description="Activa el Modo Auditoria con desglose de formulas"
+    )
     # Vectores y externos globales: cada pagina consume el subconjunto que usa.
     vectores: Vectores = Field(default_factory=Vectores)
     externos: Externos = Field(default_factory=Externos)
